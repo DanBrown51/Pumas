@@ -563,12 +563,6 @@ function playerDetail(p){
   if(isGK){var totalSaves=Object.values(ZAC_SAVES).reduce(function(a,b){return a+b;},0);C[2]=[totalSaves,"Saves 25/26"];}
   C.forEach(function(x){h+='<div><b>'+x[0]+'</b><span>'+x[1]+'</span></div>';});
   h+='</div>';
-  if(mgr||par){
-    h+='<div class="sub-section"><div class="sub-title">2025/26 Awards</div><div class="aw-chips">';
-    if(mgr)h+='<span class="aw-chip mgr">&#127942; Manager\'s Player &times;'+mgr+'</span> ';
-    if(par)h+='<span class="aw-chip par">&#11088; Parents\' Player &times;'+par+'</span>';
-    h+='</div></div>';
-  }
   var cs2526=0;MATCHES.forEach(function(m){if(m.s==="2025/26"&&m.o===0)cs2526++;});
   h+='<div class="sub-section"><div class="sub-title">By Season</div>';
   Object.keys(byseason).sort().reverse().forEach(function(se){
