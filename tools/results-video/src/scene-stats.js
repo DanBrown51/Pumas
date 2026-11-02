@@ -6,7 +6,7 @@ const mins = (nm) => (R.goalMins || []).filter((m, i) => R.goals[i] === nm && m)
 const groups = [];
 if (R.goals.length) groups.push(['Goals', tally(R.goals), 'GLS']);
 if (R.assists.length) groups.push(['Assists', tally(R.assists), 'AST']);
-const bw = best('w'); if (bw.length) groups.push(['Ball wins', bw, 'WINS']);
+const bw = best('w'); if (bw.length) groups.push(['Ball wins', bw, 'B.WINS']);
 const sv = best('s'); if (sv.length) groups.push(['Saves', sv, 'SAVES']);
 if (R.them === 0 && groups.length) { const g = groups.find((x) => x[0] === 'Saves'); if (g) g[0] = 'Saves \u00b7 Clean sheet'; }
 // lay groups out in rows: a group with 3+ players gets a full-width row, smaller groups pair up side by side

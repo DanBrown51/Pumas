@@ -390,7 +390,7 @@ function gcard(p,o){
 }
 function lsP(p){return (LS.players&&LS.players[p])||{apps:0,g:0,a:0,w:0,s:0,mgr:0,par:0};}
 function lsCS(){var c=0;(LS.matches||[]).forEach(function(m){if(!m.o)c++;});return c;}
-function cardStats(p){var s=lsP(p);return p==="Zac"?[[s.s||0,"SAV"],[lsCS(),"CS"],[s.w||0,"WINS"]]:[[s.g||0,"GLS"],[s.a||0,"AST"],[s.w||0,"WINS"]];}
+function cardStats(p){var s=lsP(p);return p==="Zac"?[[s.s||0,"SAV"],[lsCS(),"CS"],[s.w||0,"B.WINS"]]:[[s.g||0,"GLS"],[s.a||0,"AST"],[s.w||0,"B.WINS"]];}
 
 // ── TAB SWITCHING ────────────────────────────────────
 window.showTab=function(t){
@@ -558,8 +558,8 @@ function playerDetail(p){
   var totalGoals=0,totalApps=0;
   Object.values(byseason).forEach(function(s){totalGoals+=s.goals;totalApps+=s.apps;});
   var s=lsP(p),mgr=AW_MGR[p]||0,par=AW_PAR[p]||0;
-  var G=isGK?[[s.apps,"APPS"],[s.s||0,"SAV"],[lsCS(),"CS"],[s.w||0,"WINS"],[s.mgr||0,"MGR"],[s.par||0,"PAR"]]
-            :[[s.apps,"APPS"],[s.g||0,"GLS"],[s.a||0,"AST"],[s.w||0,"WINS"],[s.mgr||0,"MGR"],[s.par||0,"PAR"]];
+  var G=isGK?[[s.apps,"APPS"],[s.s||0,"SAV"],[lsCS(),"CS"],[s.w||0,"B.WINS"],[s.mgr||0,"MGR"],[s.par||0,"PAR"]]
+            :[[s.apps,"APPS"],[s.g||0,"GLS"],[s.a||0,"AST"],[s.w||0,"B.WINS"],[s.mgr||0,"MGR"],[s.par||0,"PAR"]];
   var h='<div class="ov-card">'+gcard(p,{stats6:G,foot:LS.season||"2026/27"})+'</div>';
   h+='<div class="eyb">Career</div><div class="ov-sec"><div class="ov-g">';
   var C=[[totalApps,"Apps"],[totalGoals,"Goals"],[totalApps>0?(totalGoals/totalApps).toFixed(2):"0.00","Goals / app"]];
@@ -632,7 +632,7 @@ function renderSeason(){
   h+='<div class="eyb">Form guide</div><div class="ls-form">'+FM.map(function(m,i){return '<div class="ls-f '+m.r+' pop" style="--rd:'+(0.1*i).toFixed(1)+'s" title="'+esc(m.op)+'">'+m.r+'</div>';}).join("")+'</div><div class="ls-note">Newest on the right</div>';
   var names=Object.keys(P).filter(function(p){return SHIRTS[p];});
   var lead=function(k){var mx=0;names.forEach(function(p){mx=Math.max(mx,P[p][k]||0);});return mx?[names.filter(function(p){return P[p][k]===mx;}).sort(),mx]:null;};
-  var L=[["Top scorer","g","GLS"],["Assists","a","AST"],["Ball wins","w","WINS"],["Saves","s","SAVES"]].map(function(x){return [x[0],lead(x[1]),x[2]];}).filter(function(x){return x[1];});
+  var L=[["Top scorer","g","GLS"],["Assists","a","AST"],["Ball wins","w","B.WINS"],["Saves","s","SAVES"]].map(function(x){return [x[0],lead(x[1]),x[2]];}).filter(function(x){return x[1];});
   if(L.length){
     h+='<div class="eyb">Season leaders</div><div class="lc">';
     L.forEach(function(x,i){

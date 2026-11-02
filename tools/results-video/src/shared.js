@@ -60,7 +60,7 @@ window.CARD = {
   NUMS: { Eryk: 15, Fletcher: 7, George: 6, Hudson: 9, Joshua: 11, Kyan: 5, Luke: 2, Noah: 10, Oscar: 4, Zac: 'GK' },
   stats(name) {
     const R = window.RES, S = R.season[name], G = R.game[name];
-    const keys = name === 'Zac' ? [['s', 'SAV'], ['w', 'WINS'], ['g', 'GLS'], ['mgr', 'MGR'], ['par', 'PAR']] : [['g', 'GLS'], ['a', 'AST'], ['w', 'WINS'], ['mgr', 'MGR'], ['par', 'PAR']];
+    const keys = name === 'Zac' ? [['s', 'SAV'], ['w', 'B.WINS'], ['g', 'GLS'], ['mgr', 'MGR'], ['par', 'PAR']] : [['g', 'GLS'], ['a', 'AST'], ['w', 'B.WINS'], ['mgr', 'MGR'], ['par', 'PAR']];
     return keys.map(([k, l]) => [l, S[k], G[k]]);
   },
   awards() {
