@@ -227,6 +227,11 @@ body{background:radial-gradient(120% 60% at 50% 0%,#1d1d1d 0%,var(--bk) 60%) fix
 .gc-st div{display:flex;flex-direction:column;align-items:center;min-width:13cqw;}
 .gc-st b{font-family:var(--disp);font-weight:800;font-size:11cqw;line-height:1;font-variant-numeric:tabular-nums;}
 .gc-st span{font-family:var(--disp);font-weight:700;font-size:5.2cqw;letter-spacing:.06em;}
+.gc-s6{position:absolute;left:10%;right:10%;top:65%;display:grid;grid-template-columns:repeat(3,1fr);row-gap:2.2cqw;}
+.gc-s6 div{display:flex;flex-direction:column;align-items:center;}
+.gc-s6 b{font-family:var(--disp);font-weight:800;font-size:9.6cqw;line-height:1;font-variant-numeric:tabular-nums;}
+.gc-s6 span{font-family:var(--disp);font-weight:700;font-size:4.4cqw;letter-spacing:.06em;}
+.gc-s6~.gc-ft{top:88.5%;}
 .gc-big{position:absolute;left:0;right:0;top:66%;display:flex;justify-content:center;align-items:baseline;gap:3cqw;}
 .gc-big b{font-family:var(--disp);font-weight:800;font-size:23.6cqw;line-height:1;font-variant-numeric:tabular-nums;}
 .gc-big span{font-family:var(--disp);font-weight:700;font-size:8cqw;letter-spacing:.04em;}
@@ -262,7 +267,7 @@ body{background:radial-gradient(120% 60% at 50% 0%,#1d1d1d 0%,var(--bk) 60%) fix
 .ov-g b{display:block;font-family:var(--disp);font-weight:800;font-size:28px;line-height:1;color:var(--or);}
 .ov-g span{font-family:var(--disp);font-weight:600;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(245,245,245,.6);}
 .ov .eyb{margin:18px 0 8px}
-.ov .season-row{font-family:var(--disp);font-size:16px;font-weight:600;border-color:#2a2a2a}
+.ov .season-row{gap:12px;text-align:right;font-family:var(--disp);font-size:16px;font-weight:600;border-color:#2a2a2a}
 .ov .aw-chip{font-family:var(--disp);font-size:14px;letter-spacing:.03em}
 .ty{background:#1a1a1a;border-radius:16px;padding:6px 14px;}
 .ty-r{display:grid;grid-template-columns:110px 1fr auto;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #2a2a2a;}
@@ -377,6 +382,7 @@ function gcard(p,o){
   h+='<div class="gc-cn"><b>'+(SHIRTS[p]||"")+'</b><i>'+BADGE+'</i></div>';
   h+='<div class="gc-nm">'+p+'</div>';
   if(o.big)h+='<div class="gc-big"><b>'+o.big[0]+'</b><span>'+o.big[1]+'</span></div>';
+  if(o.stats6)h+='<div class="gc-s6">'+o.stats6.map(function(s){return '<div><b>'+s[0]+'</b><span>'+s[1]+'</span></div>';}).join("")+'</div>';
   if(o.stats)h+='<div class="gc-st">'+o.stats.map(function(s){return '<div><b>'+s[0]+'</b><span>'+s[1]+'</span></div>';}).join("")+'</div>';
   if(o.foot)h+='<div class="gc-ft">'+o.foot+'</div>';
   h+='<div class="gc-gl"><i style="--gd:'+((gcN*0.7)%5.5).toFixed(1)+'s"></i></div></div></div>';
@@ -552,15 +558,12 @@ function playerDetail(p){
   var totalGoals=0,totalApps=0;
   Object.values(byseason).forEach(function(s){totalGoals+=s.goals;totalApps+=s.apps;});
   var s=lsP(p),mgr=AW_MGR[p]||0,par=AW_PAR[p]||0;
-  var h='<div class="ov-card">'+gcard(p,{stats:cardStats(p),foot:LS.season||"2026/27"})+'</div>';
-  h+='<div class="eyb">'+esc(LS.season||"2026/27")+'</div><div class="ov-sec"><div class="ov-g">';
-  var G=isGK?[[s.apps,"Apps"],[s.s||0,"Saves"],[lsCS(),"Clean sheets"],[s.w||0,"Ball wins"],[s.mgr||0,"Manager's"],[s.par||0,"Parents'"]]
-            :[[s.apps,"Apps"],[s.g||0,"Goals"],[s.a||0,"Assists"],[s.w||0,"Ball wins"],[s.mgr||0,"Manager's"],[s.par||0,"Parents'"]];
-  G.forEach(function(x){h+='<div><b>'+x[0]+'</b><span>'+x[1]+'</span></div>';});
-  h+='</div></div>';
+  var G=isGK?[[s.apps,"APPS"],[s.s||0,"SAV"],[lsCS(),"CS"],[s.w||0,"WINS"],[s.mgr||0,"MGR"],[s.par||0,"PAR"]]
+            :[[s.apps,"APPS"],[s.g||0,"GLS"],[s.a||0,"AST"],[s.w||0,"WINS"],[s.mgr||0,"MGR"],[s.par||0,"PAR"]];
+  var h='<div class="ov-card">'+gcard(p,{stats6:G,foot:LS.season||"2026/27"})+'</div>';
   h+='<div class="eyb">Career</div><div class="ov-sec"><div class="ov-g">';
   var C=[[totalApps,"Apps"],[totalGoals,"Goals"],[totalApps>0?(totalGoals/totalApps).toFixed(2):"0.00","Goals / app"]];
-  if(isGK){var totalSaves=Object.values(ZAC_SAVES).reduce(function(a,b){return a+b;},0);C[2]=[totalSaves,"Saves 25/26"];}
+  if(isGK){var totalSaves=Object.values(ZAC_SAVES).reduce(function(a,b){return a+b;},0);C[2]=[totalSaves+(s.s||0),"Saves"];}
   C.forEach(function(x){h+='<div><b>'+x[0]+'</b><span>'+x[1]+'</span></div>';});
   h+='</div>';
   var cs2526=0;MATCHES.forEach(function(m){if(m.s==="2025/26"&&m.o===0)cs2526++;});
@@ -584,7 +587,7 @@ document.addEventListener("click",function(e){var c=e.target.closest(".gc[data-p
 function renderAllPlayers(filter){
   var list=filter?SQUAD.filter(function(p){return norm(p).indexOf(norm(filter))!==-1;}):SQUAD;
   if(!list.length){ePPLY.innerHTML='<div class="nr"><div class="nr-i">&#128270;</div><h3>NOT FOUND</h3><p>No player matching that name.</p></div>';return;}
-  var h='<div class="eyb">'+esc(LS.season||"2026/27")+' squad</div><div class="ply-note">Tap a card for career stats</div><div class="gc-grid">';
+  var h='<div class="eyb">'+esc(LS.season||"2026/27")+' squad</div><div class="ply-note">Tap a card for full stats</div><div class="gc-grid">';
   list.forEach(function(p,i){
     var byseason=buildPlayerData(p),ta=0,tg=0;Object.values(byseason).forEach(function(s){ta+=s.apps;tg+=s.goals;});
     h+='<div class="rise" style="--rd:'+(i*0.05).toFixed(2)+'s">'+gcard(p,{stats:cardStats(p),foot:"Career "+ta+" apps"})+'</div>';
