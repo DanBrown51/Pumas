@@ -264,6 +264,18 @@ body{background:radial-gradient(120% 60% at 50% 0%,#1d1d1d 0%,var(--bk) 60%) fix
 .ov .eyb{margin:18px 0 8px}
 .ov .season-row{font-family:var(--disp);font-size:16px;font-weight:600;border-color:#2a2a2a}
 .ov .aw-chip{font-family:var(--disp);font-size:14px;letter-spacing:.03em}
+.ty{background:#1a1a1a;border-radius:16px;padding:6px 14px;}
+.ty-r{display:grid;grid-template-columns:110px 1fr auto;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #2a2a2a;}
+.ty-r:last-child{border-bottom:none}
+.ty-n{font-family:var(--disp);font-weight:700;font-size:19px;letter-spacing:.02em;display:flex;align-items:baseline;gap:8px;white-space:nowrap;}
+.ty-n b{color:var(--or);font-weight:800;font-size:15px;min-width:20px;text-align:right}
+.ty-m{display:flex;flex-wrap:wrap;gap:8px;}
+.ty-g{height:30px;overflow:visible}
+.ty-s{fill:none;stroke:#F5F5F5;stroke-width:5;stroke-linecap:round;stroke-dasharray:60;stroke-dashoffset:60;animation:draw .35s ease-out forwards;animation-delay:var(--d,0s);}
+.ty-x{stroke:var(--or)}
+@keyframes draw{to{stroke-dashoffset:0}}
+.ty-c{font-family:var(--disp);font-weight:800;font-size:26px;color:var(--or);min-width:22px;text-align:right}
+@media (prefers-reduced-motion:reduce){.ty-s{stroke-dashoffset:0}}
 .ply-note{text-align:center;font-size:12px;color:#888;margin:-4px 0 14px;letter-spacing:.04em}
 @media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}.rise{opacity:1;transform:none}}
 </style>
@@ -623,7 +635,7 @@ function renderSeason(){
   h+='<div class="eyb">Form guide</div><div class="ls-form">'+FM.map(function(m,i){return '<div class="ls-f '+m.r+' pop" style="--rd:'+(0.1*i).toFixed(1)+'s" title="'+esc(m.op)+'">'+m.r+'</div>';}).join("")+'</div><div class="ls-note">Newest on the right</div>';
   var names=Object.keys(P).filter(function(p){return SHIRTS[p];});
   var lead=function(k){var mx=0;names.forEach(function(p){mx=Math.max(mx,P[p][k]||0);});return mx?[names.filter(function(p){return P[p][k]===mx;}).sort(),mx]:null;};
-  var L=[["Top scorer","g","GLS"],["Assists","a","AST"],["Ball wins","w","WINS"],["Saves","s","SAVES"],["Manager’s player","mgr","MGR"],["Parents’ player","par","PAR"]].map(function(x){return [x[0],lead(x[1]),x[2]];}).filter(function(x){return x[1];});
+  var L=[["Top scorer","g","GLS"],["Assists","a","AST"],["Ball wins","w","WINS"],["Saves","s","SAVES"]].map(function(x){return [x[0],lead(x[1]),x[2]];}).filter(function(x){return x[1];});
   if(L.length){
     h+='<div class="eyb">Season leaders</div><div class="lc">';
     L.forEach(function(x,i){
@@ -632,6 +644,23 @@ function renderSeason(){
     });
     h+='</div>';
   }
+  var tallyBlock=function(title,k){
+    var rows=names.filter(function(p){return P[p][k]>0;}).sort(function(x,y){return P[y][k]-P[x][k]||x.localeCompare(y);});
+    if(!rows.length)return "";
+    var t='<div class="eyb">'+title+'</div><div class="ty rise">';
+    rows.forEach(function(p,ri){
+      var n=P[p][k],marks="",g=Math.ceil(n/5);
+      for(var gi=0;gi<g;gi++){
+        var c=Math.min(5,n-gi*5),sv='<svg viewBox="0 0 '+(c===5?64:c*12+4)+' 44" class="ty-g" style="width:'+(c===5?44:(c*12+4)*44/64)+'px">';
+        for(var si=0;si<Math.min(c,4);si++){var x=8+si*12;sv+='<path class="ty-s" style="--d:'+(0.15*(gi*5+si)+0.05*ri).toFixed(2)+'s" d="M'+x+' 6 L'+(x+1)+' 38"/>';}
+        if(c===5)sv+='<path class="ty-s ty-x" style="--d:'+(0.15*(gi*5+4)+0.05*ri).toFixed(2)+'s" d="M2 32 L58 10"/>';
+        marks+=sv+'</svg>';
+      }
+      t+='<div class="ty-r"><div class="ty-n"><b>'+(SHIRTS[p]||"")+'</b>'+esc(p)+'</div><div class="ty-m">'+marks+'</div><div class="ty-c">'+n+'</div></div>';
+    });
+    return t+'</div>';
+  };
+  h+=tallyBlock("Manager’s player","mgr")+tallyBlock("Parents’ player","par");
   names=Object.keys(P);
   var C=[["name","Player"],["apps","Apps"],["g","Gls"],["a","Ast"],["w","Wins"],["s","Svs"],["mgr","Mgr"],["par","Par"]];
   var rows=names.map(function(p){var o={name:p};C.slice(1).forEach(function(c){o[c[0]]=P[p][c[0]]||0;});return o;});
