@@ -1,0 +1,80 @@
+#stage { --ground:#111111; --main:#F47B20; --second:#F5F5F5; --accent:#FFC089; color:var(--second); font-family:var(--sans, system-ui, sans-serif) }
+.ground { position:absolute; inset:0; background:radial-gradient(90% 60% at 50% 50%, color-mix(in srgb, var(--second) 6%, var(--ground)), var(--ground)) }
+.words { position:absolute; margin:0; display:flex; flex-direction:column; gap:20px } .words > * { margin:0 }
+.center { left:0; width:1080px; align-items:center; text-align:center }
+.line { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-size:84px; line-height:1; font-weight:800; text-transform:uppercase; letter-spacing:.02em }
+.line.hero { font-size:200px; line-height:.92 } .line.title { font-size:116px }
+.sub { font-size:38px; color:color-mix(in srgb, var(--second) 68%, var(--ground)) }
+.eyebrow { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-weight:600; font-size:34px; letter-spacing:.24em; text-transform:uppercase; color:var(--main) }
+.art { position:absolute; inset:0; width:100%; height:100%; overflow:visible }
+.chalk { fill:none; stroke:var(--second); stroke-opacity:.92; stroke-linecap:round; stroke-linejoin:round }
+.eye { fill:var(--main); stroke:var(--main); stroke-linejoin:round }
+.pupil { fill:none; stroke:var(--ground); stroke-linecap:round }
+.cd-wrap { position:absolute; left:180px; top:420px; width:720px; height:1040px }
+.cd-face { position:absolute; inset:0; border-radius:36px; overflow:hidden; background:color-mix(in srgb, var(--ground) 88%, var(--second)); border:6px solid var(--main); box-sizing:border-box; box-shadow:0 30px 60px rgba(0,0,0,.25) }
+.cd-shade { position:absolute; inset:0; border-radius:36px; background:var(--ground); pointer-events:none }
+.cd-band { position:absolute; left:0; right:0; bottom:0; height:150px; background:var(--main); color:var(--ground); display:flex; align-items:center; justify-content:center; font-family:var(--display, var(--sans, system-ui, sans-serif)); font-weight:800; font-size:48px; letter-spacing:.14em; text-transform:uppercase }
+.cd-tag { position:absolute; left:44px; top:40px; font-family:var(--display, var(--sans, system-ui, sans-serif)); font-weight:600; font-size:30px; letter-spacing:.2em; text-transform:uppercase; color:var(--main); background:var(--ground); padding:6px 14px; border-radius:8px }
+.cd-name { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-weight:800; font-size:150px; line-height:1; text-transform:uppercase; letter-spacing:.02em }
+.cd-backname { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-weight:800; font-size:92px; line-height:1; text-transform:uppercase }
+.cd-rule { width:140px; height:8px; border-radius:4px; background:var(--main) }
+.cd-row { display:flex; align-items:center; gap:34px; position:relative }
+.cd-num { width:230px; text-align:right; font-family:var(--display, var(--sans, system-ui, sans-serif)); font-weight:800; font-size:160px; line-height:1; font-variant-numeric:tabular-nums }
+.cd-photo { position:absolute; left:0; top:0; width:708px; height:620px; object-fit:cover; object-position:50% 30%; transform-origin:50% 40% }
+.cd-lab { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-weight:600; font-size:44px; line-height:1.05; text-transform:uppercase; letter-spacing:.06em; color:color-mix(in srgb, var(--second) 75%, var(--ground)) }
+.dot { position:absolute; top:1560px; height:14px; border-radius:7px }
+.cd-sq { position:absolute; right:34px; top:26px; padding:4px 18px; border-radius:14px; background:var(--ground); color:var(--main); font-family:var(--display, var(--sans, system-ui, sans-serif)); font-weight:800; font-size:110px; line-height:1; font-variant-numeric:tabular-nums }
+.cd-badge { position:absolute; right:26px; top:470px; width:140px; height:140px; border-radius:50%; background:var(--ground); border:6px solid var(--main); box-sizing:border-box; padding:10px }
+.uc-rays { position:absolute; left:-460px; top:-20px; width:2000px; height:2000px; border-radius:50%; background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--accent) 30%, transparent) 0deg 6deg, transparent 6deg 18deg); opacity:0 }
+.uc-wrap { position:absolute; left:180px; top:420px; width:720px; height:1040px }
+.uc-glow { position:absolute; inset:-120px; border-radius:50%; background:radial-gradient(circle, color-mix(in srgb, var(--accent) 70%, transparent) 0, transparent 65%); opacity:0 }
+.uc-face { position:absolute; inset:0; clip-path:path('M60 40 Q360 92 660 40 Q706 34 708 84 C688 300 688 700 708 850 Q712 902 660 932 L400 1024 Q360 1044 320 1024 L60 932 Q8 902 12 850 C32 700 32 300 12 84 Q14 34 60 40 Z'); background:linear-gradient(160deg, color-mix(in srgb, var(--accent) 85%, var(--second)) 0%, var(--accent) 30%, color-mix(in srgb, var(--accent) 60%, var(--main)) 62%, color-mix(in srgb, var(--accent) 70%, var(--ground)) 100%); color:color-mix(in srgb, var(--ground) 92%, var(--main)); overflow:hidden }
+.uc-back { background:linear-gradient(160deg, color-mix(in srgb, var(--ground) 80%, var(--accent)) 0%, var(--ground) 100%) }
+.uc-back .uc-streaks { position:absolute; inset:0; background:repeating-linear-gradient(118deg, color-mix(in srgb, var(--second) 22%, transparent) 0 2px, transparent 2px 16px); opacity:.55; pointer-events:none }
+.uc-backpuma { position:absolute; left:160px; top:240px; width:400px; height:400px }
+.uc-backtxt { position:absolute; left:0; right:0; top:690px; text-align:center; font-family:var(--display, var(--sans, system-ui, sans-serif)); font-weight:800; font-size:90px; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
+.uc-photo { position:absolute; left:170px; top:80px; width:500px; height:490px; object-fit:cover; object-position:50% 22%; -webkit-mask-image:linear-gradient(#000 75%, transparent); mask-image:linear-gradient(#000 75%, transparent) }
+.uc-emblem { position:absolute; left:230px; top:110px; width:420px; height:420px }
+.uc-emblem .chalk { stroke:color-mix(in srgb, var(--ground) 85%, var(--main)) } .uc-emblem .eye { fill:color-mix(in srgb, var(--ground) 85%, var(--main)); stroke:color-mix(in srgb, var(--ground) 85%, var(--main)) } .uc-emblem .pupil { stroke:var(--accent) }
+.uc-corner { position:absolute; left:58px; top:120px; width:140px; display:flex; flex-direction:column; align-items:center; gap:8px; z-index:2 }
+.uc-num { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-weight:800; font-size:136px; line-height:.88; font-variant-numeric:tabular-nums }
+.uc-badge { width:96px; height:96px; border-radius:50%; background:var(--ground); border:4px solid var(--ground); padding:7px; box-sizing:border-box; margin-top:6px }
+.uc-namebar { position:absolute; left:0; right:0; top:585px; display:flex; justify-content:center }
+.uc-name { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-weight:800; font-size:96px; line-height:1; text-transform:capitalize; letter-spacing:.01em }
+.uc-stats { position:absolute; left:60px; right:60px; top:705px; display:flex; justify-content:space-between }
+.uc-stat { width:96px; display:flex; flex-direction:column; align-items:center; gap:4px }
+.uc-sl { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-weight:600; font-size:34px; letter-spacing:.06em }
+.uc-sv { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-weight:800; font-size:76px; line-height:1; font-variant-numeric:tabular-nums }
+.uc-foot { position:absolute; left:0; right:0; top:840px; text-align:center; font-family:var(--display, var(--sans, system-ui, sans-serif)); font-weight:600; font-size:24px; letter-spacing:.16em; text-transform:uppercase; opacity:.8 }
+.uc-shine { position:absolute; left:0; top:-100px; width:160px; height:1240px; background:linear-gradient(90deg, transparent, color-mix(in srgb, var(--second) 60%, transparent), transparent); opacity:0; pointer-events:none; clip-path:none }
+.uc-dyn { position:absolute; inset:0; width:100%; height:100% }
+.uc-outline { position:absolute; inset:0; width:100%; height:100%; pointer-events:none }
+.uc-streaks { left:-64px !important; right:-64px !important }
+.uc-mini { position:absolute; width:720px; height:1040px }
+.uc-face.uc-img { clip-path:none; background:none }
+.uc-bg { position:absolute; left:0; top:0; width:720px; height:1040px }
+.uc-glintbox { position:absolute; inset:0; overflow:hidden; pointer-events:none }
+.uc-glint { position:absolute; left:0; top:-100px; width:150px; height:1240px }
+.uc-loop { background:linear-gradient(90deg, transparent, color-mix(in srgb, var(--second) 35%, transparent), transparent) }
+.uc-shine { background:linear-gradient(90deg, transparent, color-mix(in srgb, var(--second) 70%, transparent), transparent); width:200px }
+.uc-photo { left:110px !important; top:40px !important; width:560px !important; height:597px !important; object-fit:contain !important; -webkit-mask-image:linear-gradient(#000 78%, transparent 97%) !important; mask-image:linear-gradient(#000 78%, transparent 97%) !important; filter:drop-shadow(0 10px 18px rgba(0,0,0,.3)) }
+.uc-corner { top:150px !important }
+.uc-backpuma { top:250px !important }
+.opp { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-weight:600; font-size:58px; line-height:1; text-transform:uppercase; letter-spacing:.04em }
+.plate { background:var(--ground); padding:6px 26px }
+.pitch { position:absolute; inset:0; width:100%; height:100%; overflow:visible }
+.chalk-dot { fill:var(--second); fill-opacity:.9 }
+.team { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-weight:600; font-size:44px; line-height:1.05; text-transform:uppercase; letter-spacing:.05em; text-align:center }
+.goal { position:absolute; width:300px; text-align:center; font-family:var(--display, var(--sans, system-ui, sans-serif)); font-weight:800; font-size:190px; line-height:1 }
+.chip { padding:8px 30px; border-radius:999px; background:var(--main); color:var(--ground); font-family:var(--display, var(--sans, system-ui, sans-serif)); font-weight:800; font-size:44px; letter-spacing:.12em; text-transform:uppercase; white-space:nowrap }
+.name { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-weight:800; font-size:62px; line-height:1; text-transform:uppercase; letter-spacing:.03em }
+.role { font-size:28px; color:color-mix(in srgb, var(--second) 62%, var(--ground)) }
+.row { display:flex; justify-content:center; gap:90px }
+.big { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-weight:800; font-size:210px; line-height:.9; font-variant-numeric:tabular-nums }
+.uc-stats { left:60px !important; right:60px !important }
+.uc-stat { position:relative; width:auto !important; min-width:96px }
+.uc-dl { position:absolute; left:0; right:0; top:122px; width:64px; margin:0 auto !important; text-align:center; box-sizing:border-box; padding:1px 0; border-radius:999px; background:var(--ground); color:var(--main); font-family:var(--display, var(--sans, system-ui, sans-serif)); font-weight:800; font-size:26px; line-height:1.1; font-variant-numeric:tabular-nums; white-space:nowrap }
+.uc-fdl { display:inline-block; padding:0 8px; border-radius:999px; background:var(--ground); color:var(--main); font-weight:800 }
+.row { flex-wrap:wrap }
+.stats-shine { background:linear-gradient(90deg, transparent, color-mix(in srgb, var(--second) 70%, transparent), transparent); width:200px; opacity:0 }
+.uc-foot { top:884px !important }
