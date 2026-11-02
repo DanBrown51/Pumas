@@ -227,10 +227,10 @@ body{background:radial-gradient(120% 60% at 50% 0%,#1d1d1d 0%,var(--bk) 60%) fix
 .gc-st div{display:flex;flex-direction:column;align-items:center;min-width:13cqw;}
 .gc-st b{font-family:var(--disp);font-weight:800;font-size:11cqw;line-height:1;font-variant-numeric:tabular-nums;}
 .gc-st span{font-family:var(--disp);font-weight:700;font-size:5.2cqw;letter-spacing:.06em;}
-.gc-s6{position:absolute;left:6.5%;right:6.5%;top:73%;display:grid;grid-template-columns:repeat(6,1fr);}
+.gc-s6{position:absolute;left:5.5%;right:5.5%;top:73%;display:grid;grid-template-columns:repeat(6,1fr);}
 .gc-s6 div{display:flex;flex-direction:column;align-items:center;}
-.gc-s6 b{font-family:var(--disp);font-weight:800;font-size:8.6cqw;line-height:1;font-variant-numeric:tabular-nums;}
-.gc-s6 span{font-family:var(--disp);font-weight:700;font-size:3.9cqw;letter-spacing:.04em;margin-top:.6cqw;}
+.gc-s6 b{font-family:var(--disp);font-weight:800;font-size:9.4cqw;line-height:1;font-variant-numeric:tabular-nums;}
+.gc-s6 span{font-family:var(--disp);font-weight:700;font-size:4.3cqw;letter-spacing:.04em;margin-top:.6cqw;}
 .gc-s6~.gc-ft{top:66%;}
 .gc-big{position:absolute;left:0;right:0;top:66%;display:flex;justify-content:center;align-items:baseline;gap:3cqw;}
 .gc-big b{font-family:var(--disp);font-weight:800;font-size:23.6cqw;line-height:1;font-variant-numeric:tabular-nums;}
@@ -390,6 +390,7 @@ function gcard(p,o){
 }
 function lsP(p){return (LS.players&&LS.players[p])||{apps:0,g:0,a:0,w:0,s:0,mgr:0,par:0};}
 function lsCS(){var c=0;(LS.matches||[]).forEach(function(m){if(!m.o)c++;});return c;}
+function fullStats(p){var s=lsP(p);return p==="Zac"?[[s.apps,"APPS"],[s.s||0,"SAV"],[lsCS(),"CS"],[s.w||0,"B.WINS"],[s.mgr||0,"MGR"],[s.par||0,"PAR"]]:[[s.apps,"APPS"],[s.g||0,"GLS"],[s.a||0,"AST"],[s.w||0,"B.WINS"],[s.mgr||0,"MGR"],[s.par||0,"PAR"]];}
 function cardStats(p){var s=lsP(p);return p==="Zac"?[[s.s||0,"SAV"],[lsCS(),"CS"],[s.w||0,"B.WINS"]]:[[s.g||0,"GLS"],[s.a||0,"AST"],[s.w||0,"B.WINS"]];}
 
 // ── TAB SWITCHING ────────────────────────────────────
@@ -590,7 +591,7 @@ function renderAllPlayers(filter){
   var h='<div class="eyb">'+esc(LS.season||"2026/27")+' squad</div><div class="ply-note">Tap a card for full stats</div><div class="gc-grid">';
   list.forEach(function(p,i){
     var byseason=buildPlayerData(p),ta=0,tg=0;Object.values(byseason).forEach(function(s){ta+=s.apps;tg+=s.goals;});
-    h+='<div class="rise" style="--rd:'+(i*0.05).toFixed(2)+'s">'+gcard(p,{stats:cardStats(p),foot:"Career "+ta+" apps"})+'</div>';
+    h+='<div class="rise" style="--rd:'+(i*0.05).toFixed(2)+'s">'+gcard(p,{stats6:fullStats(p),foot:LS.season||"2026/27"})+'</div>';
   });
   ePPLY.innerHTML=h+'</div>';
 }
