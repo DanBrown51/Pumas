@@ -28,8 +28,22 @@ for m in matches:
         if e['player'] in tot and e['stat'] in 'gaws': tot[e['player']][e['stat']] += 1
     for k in ('mgr', 'par'):
         if m.get(k) in tot: tot[m[k]][k] += 1
+    st = {}
+    for e in ev:
+        if e['player'] in tot and e['stat'] in 'gaws':
+            st.setdefault(e['player'], [0, 0, 0, 0])['gaws'.index(e['stat'])] += 1
+    def fm(v):
+        if v is None: return None
+        if isinstance(v, (int, float)): return str(int(v))
+        return str(v['min']) + ('+' + str(v['add']) if v.get('add') else '')
+    am = list(m.get('againstMins') or [])
+    ag = [fm(am[i]) if i < len(am) else None for i in range(them)]
     goals = [{'n': e['player'], 'min': (str(e['min']) + ('+' + str(e['add']) if e.get('add') else '')) if e.get('min') is not None else None} for e in ev if e['stat'] == 'g']
     LSm.append({'d': d, 'op': m['opp'], 'v': 'A' if m.get('venue') == 'Away' else 'H', 'r': r, 'p': us, 'o': them, 'goals': goals, 'mgr': m.get('mgr') or '', 'par': m.get('par') or ''})
+    LSm[-1]['st'] = st
+    LSm[-1]['ag'] = ag
+    LSm[-1]['miss'] = sorted(miss)
+    LSm[-1]['tr'] = any(e['stat'] in 'aws' for e in ev)
 first_tracked = next((dlabel(m['date']) for m in matches if any(e['match'] == m['id'] and e['stat'] in 'aws' for e in events)), None)
 LS = {'season': SEASON, 'updated': datetime.date.today().isoformat(), 'tracked': first_tracked, 'matches': LSm, 'players': tot}
 
