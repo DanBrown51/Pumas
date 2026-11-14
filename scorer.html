@@ -1,0 +1,978 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pumas match scorer</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+<style>
+[hidden]{display:none!important}
+:root{
+  --bg:#ffffff; --ink:#000000; --muted:#5c5c5c; --line:#e3e3e3; --chip:#f3f3f3;
+  --orange:#F47B20; --on-orange:#000000;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --bg:#000000; --ink:#ffffff; --muted:#a3a3a3; --line:#2a2a2a; --chip:#161616; color-scheme:dark; }
+}
+:root[data-theme="dark"]{ --bg:#000000; --ink:#ffffff; --muted:#a3a3a3; --line:#2a2a2a; --chip:#161616; color-scheme:dark; }
+html{ scroll-padding-top:env(safe-area-inset-top,0px); }
+*,*::before,*::after{ box-sizing:border-box; }
+body{ margin:0; background:var(--bg); color:var(--ink); font-family:"Barlow",system-ui,-apple-system,sans-serif; font-size:16px; line-height:1.4; }
+button{ font:inherit; color:inherit; }
+.wrap{ max-width:560px; margin:0 auto; padding:0 14px 96px; }
+
+/* scoreboard */
+.board{ position:sticky; top:env(safe-area-inset-top,0px); z-index:5; background:var(--orange); color:var(--on-orange); margin:0 -14px; padding:8px 14px 8px; }
+.board-top{ display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:14px; font-weight:600; }
+.board-top button{ background:transparent; border:2px solid var(--on-orange); border-radius:999px; padding:4px 12px; cursor:pointer; font-weight:600; font-size:14px; }
+.score{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:8px; margin-top:4px; }
+.oppwrap{ display:flex; align-items:center; justify-content:flex-end; gap:6px; min-width:0; }
+.team{ font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:20px; line-height:1.05; overflow-wrap:anywhere; }
+.team.right{ text-align:right; }
+.nums{ font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:44px; line-height:.95; display:flex; align-items:center; gap:8px; font-variant-numeric:tabular-nums; }
+.opp-ctl{ display:flex; justify-content:flex-end; gap:8px; margin-top:6px; }
+.opp-ctl{ display:flex; gap:4px; margin:0; flex:none; }
+.opp-ctl button{ width:36px; height:34px; border-radius:10px; border:2px solid var(--on-orange); background:transparent; font-weight:800; font-size:20px; cursor:pointer; }
+.opp-ctl span{ align-self:center; font-size:13px; font-weight:600; margin-right:auto; }
+
+/* clock */
+.clock{ display:flex; align-items:center; gap:10px; }
+.clock .time{ font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:30px; line-height:1; font-variant-numeric:tabular-nums; }
+.clock .phase{ font-size:13px; font-weight:600; margin-right:auto; line-height:1.15; min-width:0; }
+.clock .phase small{ display:block; font-weight:400; font-size:12px; }
+.clock button{ white-space:nowrap; flex:none; height:36px; border-radius:999px; border:2px solid var(--on-orange); background:var(--on-orange); color:var(--orange); font-weight:600; font-size:14px; padding:0 14px; cursor:pointer; }
+.clock button[hidden], .addt[hidden]{ display:none; }
+.clock .creset{ background:transparent; color:var(--on-orange); padding:0 10px; font-size:18px; }
+.clock .creset.armed{ background:var(--on-orange); color:var(--orange); font-size:14px; }
+.addt{ font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:20px; line-height:1; background:var(--on-orange); color:var(--orange); border-radius:6px; padding:2px 6px; margin-left:-4px; font-variant-numeric:tabular-nums; }
+/* key */
+.key{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:14px 0 6px; padding-left:136px; font-size:13px; color:var(--muted); text-align:center; }
+
+/* players */
+.modes{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:12px 0 4px; background:var(--chip); padding:4px; border-radius:14px; }
+.modes button{ white-space:nowrap; font-size:14px; padding:0 4px; height:44px; border-radius:10px; border:0; background:transparent; font-weight:600; cursor:pointer; color:var(--muted); }
+.modes button[aria-pressed="true"]{ background:var(--ink); color:var(--bg); }
+.modes button:focus-visible{ outline:3px solid var(--orange); outline-offset:2px; }
+.wins{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+.wins[hidden], .stats3[hidden]{ display:none; }
+.wtile{ height:84px; border-radius:16px; border:0; background:var(--chip); cursor:pointer; display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:8px; padding:0 10px; text-align:left; min-width:0; touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none; }
+.wtile .name{ min-width:0; }
+.wtile .wn{ font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:36px; line-height:1; font-variant-numeric:tabular-nums; }
+.wtile.has .wn{ color:var(--orange); }
+.att{ margin:12px 0 0; border:2px solid var(--line); border-radius:14px; }
+.att summary{ list-style:none; cursor:pointer; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; gap:10px; font-weight:600; }
+.att summary::-webkit-details-marker{ display:none; }
+.att summary .hint{ color:var(--muted); font-weight:400; font-size:14px; }
+.att summary:focus-visible{ outline:3px solid var(--orange); outline-offset:2px; border-radius:12px; }
+.att[open] summary .hint::after{ content:' \25B4'; }
+.att:not([open]) summary .hint::after{ content:' \25BE'; }
+.attgrid{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px; padding:0 10px 12px; }
+.attgrid p{ grid-column:1 / -1; margin:0 4px 2px; color:var(--muted); font-size:14px; }
+.achip{ min-width:0; height:48px; border-radius:12px; border:2px solid var(--line); background:var(--chip); display:flex; align-items:center; gap:10px; padding:0 10px; cursor:pointer; text-align:left; }
+.achip .no{ width:30px; height:30px; font-size:14px; }
+.achip .name{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.achip .st{ margin-left:auto; flex:none; font-size:13px; color:var(--muted); font-weight:600; }
+.achip.out{ border-color:var(--orange); background:transparent; }
+.achip.out .name{ text-decoration:line-through; color:var(--muted); }
+.achip.out .st{ color:var(--orange); }
+.achip:focus-visible{ outline:3px solid var(--orange); outline-offset:2px; }
+.player.away, .wtile.away{ opacity:.35; }
+.wtile.flash{ background:var(--orange); color:var(--on-orange); }
+.wtile.flash .wn{ color:var(--on-orange); }
+.wtile:focus-visible{ outline:3px solid var(--orange); outline-offset:2px; }
+.player{ display:grid; grid-template-columns:130px repeat(3,1fr); gap:6px; align-items:center; padding:8px 0; border-bottom:1px solid var(--line); }
+.who{ display:flex; align-items:center; gap:8px; min-width:0; }
+.no{ flex:none; width:36px; height:36px; border-radius:50%; background:var(--ink); color:var(--bg); display:grid; place-items:center; font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:17px; }
+.name{ font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:20px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tap{ height:56px; border-radius:12px; border:0; background:var(--chip); cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:26px; line-height:1; font-variant-numeric:tabular-nums; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+.tap small{ font-family:"Barlow",sans-serif; font-weight:600; font-size:11px; color:var(--muted); margin-top:2px; }
+.tap.has{ background:var(--ink); color:var(--bg); }
+.tap.has small{ color:var(--bg); opacity:.75; }
+.tap.flash{ background:var(--orange); color:var(--on-orange); }
+.tap:focus-visible,.board button:focus-visible,.bar button:focus-visible,.list button:focus-visible{ outline:3px solid var(--orange); outline-offset:2px; }
+
+/* bottom bar */
+.bar{ position:fixed; left:0; right:0; bottom:0; padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px)); background:var(--bg); border-top:1px solid var(--line); display:flex; gap:8px; justify-content:center; z-index:6; }
+.bar button{ flex:1; max-width:180px; font-size:14px; padding:0 4px; height:48px; border-radius:12px; border:2px solid var(--ink); background:transparent; font-weight:600; cursor:pointer; }
+.bar button.primary{ background:var(--ink); color:var(--bg); }
+.bar button:disabled{ opacity:.35; cursor:default; }
+
+/* sheets */
+.sheet{ position:fixed; inset:0; z-index:10; background:var(--bg); overflow:auto; padding:calc(16px + env(safe-area-inset-top,0px)) 14px calc(24px + env(safe-area-inset-bottom,0px)); }
+.sheet[hidden]{ display:none; }
+.sheet h2{ font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:34px; margin:0 0 4px; }
+.sheet p.note{ color:var(--muted); margin:0 0 16px; }
+.field{ display:block; margin:0 0 14px; }
+.field span{ display:block; font-weight:600; margin-bottom:6px; }
+.field input{ width:100%; height:48px; border-radius:12px; border:2px solid var(--line); background:var(--chip); color:var(--ink); padding:0 12px; font:inherit; }
+.seg{ display:flex; gap:8px; }
+.seg button{ flex:1; height:48px; border-radius:12px; border:2px solid var(--line); background:var(--chip); font-weight:600; cursor:pointer; }
+.seg button[aria-pressed="true"]{ border-color:var(--ink); background:var(--ink); color:var(--bg); }
+.row-btns{ display:flex; gap:8px; margin-top:8px; }
+.row-btns button{ flex:1; height:50px; border-radius:12px; border:2px solid var(--ink); background:transparent; font-weight:600; cursor:pointer; }
+.row-btns button.primary{ background:var(--orange); border-color:var(--orange); color:var(--on-orange); }
+.list{ list-style:none; margin:0 0 18px; padding:0; }
+.list li{ border-bottom:1px solid var(--line); }
+.list button{ width:100%; text-align:left; background:none; border:0; padding:12px 2px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; }
+.list .res{ font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:22px; font-variant-numeric:tabular-nums; }
+.form{ margin:0 0 14px; padding:12px 14px; border-radius:14px; background:var(--chip); }
+.form[hidden]{ display:none; }
+.form .fl{ font-size:13px; color:var(--muted); font-weight:600; margin:0 0 8px; }
+.form .chips{ display:flex; gap:6px; flex-wrap:wrap; }
+.wdl{ display:inline-grid; place-items:center; width:34px; height:34px; border-radius:8px; font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:20px; flex:none; }
+.wdl.W{ background:var(--orange); color:var(--on-orange); }
+.wdl.D{ background:var(--line); color:var(--ink); }
+.wdl.L{ background:var(--ink); color:var(--bg); }
+.wdl.live{ background:transparent; border:2px dashed var(--muted); color:var(--muted); font-size:13px; }
+.form .rec{ margin:10px 0 0; font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:19px; }
+.list .resw{ display:flex; align-items:center; gap:10px; }
+.list .meta{ color:var(--muted); font-size:14px; }
+.tablewrap{ overflow-x:auto; }
+table{ width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; table-layout:fixed; }
+#totTable th:first-child,#totTable td:first-child{ width:24%; }
+#totTable td{ font-size:19px; }
+#totTable th:not(:first-child),#totTable td:not(:first-child){ text-align:center; padding-left:2px; padding-right:2px; }
+#totTable th{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+th,td{ padding:10px 6px; border-bottom:1px solid var(--line); text-align:right; }
+th:first-child,td:first-child{ text-align:left; }
+th{ font-size:13px; color:var(--muted); font-weight:600; }
+td{ font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:20px; }
+td:first-child{ font-weight:600; }
+.awards{ margin:22px 0 0; display:grid; gap:12px; }
+.awards h3{ font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:24px; margin:0; }
+.award{ display:grid; grid-template-columns:1fr 1.3fr; gap:10px; align-items:center; }
+.award span{ font-weight:600; }
+.award select{ width:100%; height:48px; border-radius:12px; border:2px solid var(--line); background:var(--chip); color:var(--ink); padding:0 10px; font:inherit; font-weight:600; }
+.award select.set{ border-color:var(--orange); }
+.award select:focus-visible{ outline:3px solid var(--orange); outline-offset:2px; }
+.award .votebtn{ grid-column:1 / -1; height:48px; border-radius:12px; border:2px solid var(--orange); background:transparent; color:var(--ink); font-weight:600; cursor:pointer; }
+.vote{ position:fixed; inset:0; z-index:30; background:var(--bg); overflow:auto; padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(20px + env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column; }
+.vote[hidden]{ display:none; }
+.vote-top{ display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:14px; color:var(--muted); }
+.vote-top button{ background:transparent; border:2px solid var(--line); color:var(--ink); border-radius:999px; padding:6px 12px; font-weight:600; cursor:pointer; }
+.vote h2{ font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:40px; line-height:1; margin:18px 0 6px; }
+.vote p.lead{ color:var(--muted); margin:0 0 18px; }
+.vgrid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.vgrid button{ height:76px; border-radius:14px; border:2px solid var(--line); background:var(--chip); display:flex; align-items:center; gap:12px; padding:0 14px; cursor:pointer; text-align:left; }
+.vgrid button .no{ width:40px; height:40px; }
+.vgrid button .name{ font-size:24px; }
+.vgrid button:active,.vgrid button:focus-visible{ border-color:var(--orange); outline:none; }
+.vbig{ margin:auto 0; text-align:center; padding:30px 0; }
+.vbig .huge{ font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:64px; line-height:1; margin:0 0 10px; }
+.vbig p{ color:var(--muted); margin:0 0 24px; }
+.vbtn{ display:block; width:100%; height:58px; border-radius:14px; border:0; background:var(--orange); color:var(--on-orange); font-weight:600; font-size:18px; cursor:pointer; margin-top:10px; }
+.vbtn.ghost{ background:transparent; border:2px solid var(--ink); color:var(--ink); }
+.vcount{ font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:22px; color:var(--ink); }
+.vres{ list-style:none; padding:0; margin:0 0 10px; }
+.vres li{ display:flex; justify-content:space-between; align-items:center; padding:12px 2px; border-bottom:1px solid var(--line); font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:24px; }
+.vres li.win{ color:var(--orange); font-weight:800; }
+.vpoll{ display:grid; grid-template-columns:1fr auto auto auto; gap:8px; align-items:center; padding:6px 0; border-bottom:1px solid var(--line); }
+.vpoll span.n{ font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:22px; min-width:28px; text-align:center; }
+.vpoll{ padding:8px 0; } .vpoll .name{ font-size:24px; } .vpoll button{ width:56px; height:52px; border-radius:10px; border:2px solid var(--ink); background:transparent; font-weight:800; font-size:20px; cursor:pointer; }
+/* dashboard */
+.dash{ position:fixed; inset:0; z-index:12; background:var(--bg); overflow:auto; padding:0 0 calc(90px + env(safe-area-inset-bottom,0px)); }
+.dash[hidden]{ display:none; }
+.dash.viewer{ padding-bottom:calc(24px + env(safe-area-inset-bottom,0px)); }
+.dwrap{ max-width:560px; margin:0 auto; padding:0 14px; }
+.dhead{ background:var(--ink); color:var(--bg); padding:calc(18px + env(safe-area-inset-top,0px)) 18px 18px; }
+.dhead .club{ font-size:13px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--orange); margin:0; }
+.dhead h1{ font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:44px; line-height:1; margin:4px 0 12px; text-transform:uppercase; }
+.dhead .top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+.dhead .top button{ background:transparent; border:2px solid var(--bg); color:var(--bg); border-radius:999px; padding:6px 14px; font-weight:600; cursor:pointer; flex:none; }
+.drec{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+.drec div{ background:color-mix(in srgb, var(--bg) 12%, var(--ink)); border-radius:10px; padding:8px 4px; text-align:center; }
+.drec b{ display:block; font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:30px; line-height:1; font-variant-numeric:tabular-nums; }
+.drec span{ font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; opacity:.75; }
+.dsec{ margin:22px 0 0; }
+.dsec h2{ font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:24px; text-transform:uppercase; letter-spacing:.04em; margin:0 0 10px; display:flex; align-items:center; gap:10px; }
+.dsec h2::before{ content:''; width:22px; height:5px; border-radius:3px; background:var(--orange); }
+.latest{ border-radius:16px; background:var(--orange); color:var(--on-orange); padding:16px; }
+.latest .meta{ font-size:13px; font-weight:600; display:flex; justify-content:space-between; gap:8px; }
+.latest .sc{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:10px; margin:8px 0 10px; }
+.latest .tm{ font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:20px; line-height:1.05; }
+.latest .tm.r{ text-align:right; }
+.latest .big{ font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:58px; line-height:.9; font-variant-numeric:tabular-nums; }
+.latest .gl{ font-size:14px; font-weight:600; margin:0 0 6px; }
+.latest .aw{ font-size:13px; margin:0; }
+.livetag{ display:inline-flex; align-items:center; gap:6px; background:var(--on-orange); color:var(--orange); border-radius:999px; padding:2px 10px; font-weight:800; font-size:12px; letter-spacing:.08em; }
+.lead{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.lead div{ border:2px solid var(--line); border-radius:14px; padding:10px 12px; }
+.lead p{ margin:0; }
+.lead .l{ font-size:12px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+.lead .n{ font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:24px; line-height:1.1; }
+.lead .v{ font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:34px; line-height:1; color:var(--orange); font-variant-numeric:tabular-nums; }
+.dform{ display:flex; gap:6px; flex-wrap:wrap; }
+.dres{ list-style:none; margin:0; padding:0; }
+.dres li{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 2px; border-bottom:1px solid var(--line); }
+.dres .o{ font-weight:600; }
+.dres .m{ font-size:13px; color:var(--muted); }
+.dres .r{ display:flex; align-items:center; gap:10px; font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:22px; font-variant-numeric:tabular-nums; }
+#dTable{ table-layout:fixed; }
+#dTable th{ cursor:pointer; white-space:nowrap; text-align:center; padding:8px 2px; user-select:none; }
+#dTable th:first-child{ text-align:left; width:24%; }
+#dTable th[aria-sort]{ color:var(--orange); }
+#dTable td{ text-align:center; padding:9px 2px; font-size:19px; }
+#dTable td:first-child{ text-align:left; }
+#dTable td.top{ color:var(--orange); font-weight:800; }
+.dnote{ font-size:13px; color:var(--muted); margin:8px 0 0; }
+.dfoot{ display:flex; gap:8px; margin:20px 0 0; }
+.dfoot button{ flex:1; height:48px; border-radius:12px; border:2px solid var(--ink); background:transparent; font-weight:600; cursor:pointer; }
+.status{ font-size:13px; color:var(--muted); margin:10px 0 0; min-height:18px; }
+.empty{ padding:40px 0; text-align:center; }
+.empty h1{ font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:44px; margin:0 0 6px; }
+.empty p{ color:var(--muted); margin:0 0 20px; }
+.empty button{ height:54px; padding:0 28px; border-radius:14px; border:0; background:var(--orange); color:var(--on-orange); font-weight:600; font-size:17px; cursor:pointer; }
+@media (max-width:380px){ .player{ grid-template-columns:116px repeat(3,1fr); } .wtile .name{ font-size:18px; } .key{ padding-left:122px; } .name{ font-size:18px; } .no{ width:32px; height:32px; } }
+@media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="empty" id="loading"><p>Loading…</p></div>
+</div>
+
+<nav class="bar" id="bar" hidden>
+  <button id="undoBtn" disabled>Undo last tap</button>
+  <button id="matchesBtn">Matches</button>
+  <button id="totalsBtn">Dashboard</button>
+  <button id="sendBtn" class="primary">Send to Dan</button>
+</nav>
+
+<section class="sheet" id="newSheet" hidden aria-labelledby="newTitle">
+  <h2 id="newTitle">New match</h2>
+  <p class="note">Set up the game, then tap players as things happen.</p>
+  <label class="field"><span>Opponent</span><input id="oppIn" autocomplete="off" placeholder="e.g. Berry Boys"></label>
+  <label class="field"><span>Date</span><input id="dateIn" type="date"></label>
+  <div class="field"><span>Venue</span>
+    <div class="seg" id="venueSeg"><button data-v="Home" aria-pressed="true">Home</button><button data-v="Away" aria-pressed="false">Away</button></div>
+  </div>
+  <label class="field"><span>Minutes per half</span><input id="halfIn" type="number" inputmode="numeric" min="5" max="45" value="25"></label>
+  <div class="row-btns"><button id="newCancel">Cancel</button><button id="newSave" class="primary">Start match</button></div>
+</section>
+
+<section class="sheet" id="matchesSheet" hidden aria-labelledby="mTitle">
+  <h2 id="mTitle">Matches</h2>
+  <p class="note">Pick a game to view or keep scoring.</p>
+  <div class="form" id="formBox"></div>
+  <ul class="list" id="matchList"></ul>
+  <div class="row-btns"><button id="mClose">Close</button><button id="mNew" class="primary">New match</button></div>
+</section>
+
+<section class="sheet" id="totalsSheet" hidden aria-labelledby="tTitle">
+  <h2 id="tTitle">Season totals</h2>
+  <p class="note" id="tNote">All matches recorded here.</p>
+  <div class="tablewrap"><table id="totTable"></table></div>
+  <div class="row-btns"><button id="tClose">Close</button><button id="tExport" class="primary">Download CSV</button></div>
+  <p class="status" id="tStatus"></p>
+</section>
+
+<section class="vote" id="voteSheet" hidden aria-live="polite"></section>
+<section class="dash" id="dashSheet" hidden aria-label="Season dashboard"></section>
+
+<script>
+(function(){
+  const PLAYERS = [
+    ['Eryk','15'],['Fletcher','7'],['George','6'],['Hudson','9'],['Joshua','11'],
+    ['Kyan','5'],['Luke','2'],['Noah','10'],['Oscar','4'],['Zac','GK']
+  ];
+  const STATS = [['g','Goals'],['a','Assists'],['w','Ball wins'],['s','Saves']];
+  const SHORT = { g:'Goal', a:'Assist', w:'Win', s:'Save' };
+  const ROWSTATS = STATS.filter(([k]) => k !== 'w');
+  let viewMode = (() => { try { return localStorage.getItem('pumas-tracker-mode') || 'wins'; } catch (e) { return 'wins'; } })();
+  const AWARDS = [['mgr', "Manager's player"], ['par', "Parents' player"]];
+
+  let db = null, mode = 'local';
+  let matches = [];              // [{id, opp, date, venue, against, createdAt}]
+  let events = {};               // eventId -> {match, player, stat, at}
+  let ballots = {};              // ballotId -> {match, player, at, src: 'phone'|'poll'}
+  let currentId = null;
+  const undo = [];               // [{id: eventId, match}]
+  const $ = (id) => document.getElementById(id);
+  const app = $('app');
+  const blank = () => ({ g:0, a:0, w:0, s:0 });
+  const today = () => new Date().toISOString().slice(0,10);
+  const fmtDate = (d) => { try { return new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' }); } catch (e) { return String(d || ''); } };
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  const plain = (v) => JSON.parse(JSON.stringify(v || {}));
+
+  function showError(msg){
+    let b = $('errBanner');
+    if (!b) { b = document.createElement('div'); b.id = 'errBanner'; b.setAttribute('role','alert'); b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:20;background:var(--ink);color:var(--bg);padding:12px 14px;border-radius:12px;font-size:14px'; document.body.append(b); }
+    b.textContent = msg; clearTimeout(b._t); b._t = setTimeout(() => b.remove(), 6000);
+  }
+  window.addEventListener('error', (e) => showError('Something went wrong: ' + (e.message || 'unknown error') + '. Your taps so far are saved.'));
+  window.addEventListener('unhandledrejection', (e) => showError('Could not save: ' + ((e.reason && (e.reason.message || e.reason.code)) || 'unknown error') + '.'));
+
+  /* ---------- storage ---------- */
+  function lsGet(){ try { const v = localStorage.getItem('pumas-scorer-v1'); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+  function lsSet(){ try { localStorage.setItem('pumas-scorer-v1', JSON.stringify({ matches, events, ballots })); } catch (e) {} }
+  async function saveMatch(m){
+    if (mode !== 'db') { lsSet(); return; }
+    try { await db.doc('matches/' + m.id).set(plain(m)); } catch (e) { showError('Could not save the match. Check your connection and try again.'); }
+  }
+  const inflight = new Set(), deleting = new Set();
+  async function putEvent(id, ev){
+    if (mode !== 'db') { lsSet(); return; }
+    inflight.add(id);
+    try { await db.doc('events/' + id).set(ev); } catch (e) { showError('That tap did not save. Check your connection.'); }
+    inflight.delete(id);
+  }
+  async function dropEvent(id){
+    if (mode !== 'db') { lsSet(); return; }
+    deleting.add(id);
+    try { await db.doc('events/' + id).delete(); } catch (e) { showError('Undo did not save. Check your connection.'); }
+    deleting.delete(id);
+  }
+
+  const binflight = new Set(), bdeleting = new Set();
+  async function putBallot(id, b){
+    if (mode !== 'db') { lsSet(); return; }
+    binflight.add(id);
+    try { await db.doc('ballots/' + id).set(b); } catch (e) { showError('That vote did not save. Check your connection.'); }
+    binflight.delete(id);
+  }
+  async function dropBallot(id){
+    if (mode !== 'db') { lsSet(); return; }
+    bdeleting.add(id);
+    try { await db.doc('ballots/' + id).delete(); } catch (e) { showError('Could not remove that vote. Check your connection.'); }
+    bdeleting.delete(id);
+  }
+
+  /* ---------- derived ---------- */
+  const current = () => matches.find((m) => m.id === currentId) || null;
+  function tallyFor(matchId){
+    const t = {};
+    Object.values(events).forEach((ev) => {
+      if (ev.match !== matchId) return;
+      const p = t[ev.player] || (t[ev.player] = blank());
+      if (ev.stat in p) p[ev.stat] += 1;
+    });
+    return t;
+  }
+  const pumasGoals = (matchId) => Object.values(tallyFor(matchId)).reduce((n, p) => n + p.g, 0);
+
+  /* ---------- render ---------- */
+  let built = null;   // {matchId, nums, buttons: {player: {stat: {btn, val}}}}
+  const sheetOpen = () => !($('newSheet').hidden && $('matchesSheet').hidden && $('totalsSheet').hidden && $('dashSheet').hidden);
+
+  function render(){
+    if (viewOnly) { renderDash(); return; }
+    const l = $('loading'); if (l) l.remove();
+    const m = current();
+    $('bar').hidden = !m;
+    if (!m) { built = null; renderEmpty(); return; }
+    if (!built || built.matchId !== m.id) buildMatch(m);
+    update();
+  }
+
+  function renderEmpty(){
+    const e = document.createElement('div'); e.className = 'empty';
+    const h = document.createElement('h1'); h.textContent = 'Pumas match scorer';
+    const p = document.createElement('p'); p.textContent = 'Scoring for the Pumas while Dan is away. Start the match, tap players as things happen, then tap “Send to Dan” at full time. Everything is saved on this phone as you go.';
+    const b = document.createElement('button'); b.textContent = 'Start a match'; b.onclick = openNew;
+    e.append(h, p, b);
+    if (matches.length) {
+      const b2 = document.createElement('button'); b2.textContent = 'Open a past match';
+      b2.style.cssText = 'margin-left:8px;background:transparent;border:2px solid var(--ink);color:var(--ink)'; b2.onclick = openMatches; e.append(b2);
+    }
+    app.replaceChildren(e);
+  }
+
+  function buildMatch(m){
+    const board = document.createElement('header'); board.className = 'board';
+    const sc = document.createElement('div'); sc.className = 'score';
+    const lt = document.createElement('div'); lt.className = 'team'; lt.textContent = 'Pumas';
+    const nums = document.createElement('div'); nums.className = 'nums';
+    const rt = document.createElement('div'); rt.className = 'team right';
+    const oppwrap = document.createElement('div'); oppwrap.className = 'oppwrap';
+    sc.append(lt, nums, oppwrap);
+    const oc = document.createElement('div'); oc.className = 'opp-ctl';
+    const minus = document.createElement('button'); minus.textContent = '−'; minus.setAttribute('aria-label','Remove an opposition goal');
+    const plus = document.createElement('button'); plus.textContent = '+'; plus.setAttribute('aria-label','Add an opposition goal');
+    minus.onclick = () => { const c = current(); if (!c) return; c.against = Math.max(0, (c.against || 0) - 1); if (c.againstMins) c.againstMins = c.againstMins.slice(0, c.against); update(); saveMatch(c); };
+    plus.onclick = () => { const c = current(); if (!c) return; const mins = (c.againstMins || []).slice(0, c.against || 0); while (mins.length < (c.against || 0)) mins.push(null); mins.push(minuteNow(c) || null); c.againstMins = mins; c.against = (c.against || 0) + 1; update(); saveMatch(c); };
+    oc.append(minus, plus); oppwrap.append(rt, oc);
+    const ck = document.createElement('div'); ck.className = 'clock';
+    const ctime = document.createElement('span'); ctime.className = 'time'; ctime.setAttribute('role', 'timer');
+    const cadd = document.createElement('span'); cadd.className = 'addt'; cadd.hidden = true;
+    const cphase = document.createElement('span'); cphase.className = 'phase';
+    const cph = document.createElement('span'); const info = document.createElement('small'); cphase.append(cph, info);
+    const cbtn = document.createElement('button'); cbtn.type = 'button';
+    cbtn.onclick = () => { const c = current(); if (!c) return; clockStep(c); update(); saveMatch(c); };
+    const creset = document.createElement('button'); creset.type = 'button'; creset.className = 'creset'; creset.textContent = '\u21ba'; creset.setAttribute('aria-label', 'Reset match clock');
+    let rt0 = null;
+    creset.onclick = () => {
+      const c = current(); if (!c) return;
+      if (!creset.classList.contains('armed')) { creset.classList.add('armed'); creset.textContent = 'Reset?'; clearTimeout(rt0); rt0 = setTimeout(() => { creset.classList.remove('armed'); creset.textContent = '\u21ba'; }, 3000); return; }
+      clearTimeout(rt0); creset.classList.remove('armed'); creset.textContent = '\u21ba';
+      c.clock = { phase: 'pre' }; update(); saveMatch(c);
+    };
+    ck.append(ctime, cadd, cphase, creset, cbtn);
+    board.append(ck, sc);
+
+    const key = document.createElement('div'); key.className = 'key';
+    ROWSTATS.forEach(([, n]) => { const s = document.createElement('span'); s.textContent = n; key.append(s); });
+    const modes = document.createElement('div'); modes.className = 'modes'; modes.setAttribute('role', 'group'); modes.setAttribute('aria-label', 'What to record');
+    const mW = document.createElement('button'); mW.type = 'button'; mW.textContent = 'Ball wins';
+    const mO = document.createElement('button'); mO.type = 'button'; mO.textContent = 'Goals \u00b7 Assists \u00b7 Saves';
+    modes.append(mW, mO);
+
+    const buttons = {};
+    const rows = PLAYERS.map(([name, no]) => {
+      const row = document.createElement('div'); row.className = 'player';
+      const who = document.createElement('div'); who.className = 'who';
+      const badge = document.createElement('span'); badge.className = 'no'; badge.textContent = no;
+      const nm = document.createElement('span'); nm.className = 'name'; nm.textContent = name;
+      who.append(badge, nm); row.append(who);
+      buttons[name] = { row };
+      ROWSTATS.forEach(([k]) => {
+        const b = document.createElement('button'); b.className = 'tap'; b.type = 'button';
+        const v = document.createElement('span'); v.textContent = '0';
+        const sm = document.createElement('small'); sm.textContent = SHORT[k];
+        b.append(v, sm);
+        b.addEventListener('click', () => tap(name, k));
+        row.append(b);
+        buttons[name][k] = { btn: b, val: v };
+      });
+      return row;
+    });
+    const att = document.createElement('details'); att.className = 'att';
+    const asum = document.createElement('summary'); const acount = document.createElement('span'); const ahint = document.createElement('span'); ahint.className = 'hint'; ahint.textContent = 'Mark missing';
+    asum.append(acount, ahint); att.append(asum);
+    const agrid = document.createElement('div'); agrid.className = 'attgrid';
+    const anote = document.createElement('p'); anote.textContent = 'Everyone counts as playing. Tap anyone who\u2019s missing.'; agrid.append(anote);
+    const achips = {};
+    PLAYERS.forEach(([name, no]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'achip';
+      const badge = document.createElement('span'); badge.className = 'no'; badge.textContent = no;
+      const nm = document.createElement('span'); nm.className = 'name'; nm.textContent = name;
+      const st = document.createElement('span'); st.className = 'st';
+      b.append(badge, nm, st);
+      b.onclick = () => { const c = current(); if (!c) return; const miss = new Set(c.missing || []); if (miss.has(name)) miss.delete(name); else miss.add(name); c.missing = PLAYERS.map(([n]) => n).filter((n) => miss.has(n)); update(); saveMatch(c); };
+      agrid.append(b); achips[name] = { btn: b, st };
+    });
+    att.append(agrid);
+    const wins = document.createElement('div'); wins.className = 'wins';
+    PLAYERS.forEach(([name, no]) => {
+      const b = document.createElement('button'); b.className = 'wtile'; b.type = 'button';
+      const badge = document.createElement('span'); badge.className = 'no'; badge.textContent = no;
+      const nm = document.createElement('span'); nm.className = 'name'; nm.textContent = name;
+      const v = document.createElement('span'); v.className = 'wn'; v.textContent = '0';
+      b.append(badge, nm, v);
+      b.addEventListener('click', () => tap(name, 'w'));
+      wins.append(b);
+      buttons[name].w = { btn: b, val: v };
+    });
+    const stats3 = document.createElement('div'); stats3.className = 'stats3'; stats3.append(key, ...rows);
+    const setMode = (md) => {
+      viewMode = md; try { localStorage.setItem('pumas-tracker-mode', md); } catch (e) {}
+      mW.setAttribute('aria-pressed', String(md === 'wins')); mO.setAttribute('aria-pressed', String(md !== 'wins'));
+      wins.hidden = md !== 'wins'; stats3.hidden = md === 'wins';
+    };
+    mW.onclick = () => setMode('wins'); mO.onclick = () => setMode('other');
+    setMode(viewMode);
+    const aw = document.createElement('section'); aw.className = 'awards';
+    const ah = document.createElement('h3'); ah.textContent = 'Players of the match'; aw.append(ah);
+    const selects = {};
+    AWARDS.forEach(([k, label]) => {
+      const l = document.createElement('label'); l.className = 'award';
+      const sp = document.createElement('span'); sp.textContent = label;
+      const sel = document.createElement('select');
+      const none = document.createElement('option'); none.value = ''; none.textContent = 'Not picked yet'; sel.append(none);
+      PLAYERS.forEach(([n]) => { const o = document.createElement('option'); o.value = n; o.textContent = n; sel.append(o); });
+      sel.onchange = () => { const c = current(); if (!c) return; c[k] = sel.value; update(); saveMatch(c); };
+      l.append(sp, sel);
+      if (k === 'par') {
+        const vb = document.createElement('button'); vb.type = 'button'; vb.className = 'votebtn'; vb.textContent = 'Run the parents\u2019 vote';
+        vb.onclick = (e) => { e.preventDefault(); openVote(); };
+        l.append(vb); selects.voteBtn = vb;
+      }
+      aw.append(l); selects[k] = sel;
+    });
+    app.replaceChildren(board, att, modes, wins, stats3, aw);
+    built = { matchId: m.id, nums, info, rt, buttons, selects, ctime, cadd, cphase: cph, cbtn, creset, achips, acount };
+  }
+
+  /* ---------- match clock ---------- */
+  const PHASE = { pre: ['Not started', 'Start 1st half'], h1: ['1st half', 'Half time'], ht: ['Half time', 'Start 2nd half'], h2: ['2nd half', 'Full time'], ft: ['Full time', ''] };
+  const halfLen = (m) => Number(m.halfLen) || 25;
+  function clockStep(m){
+    const c = Object.assign({ phase: 'pre' }, m.clock || {}), now = Date.now();
+    if (c.phase === 'pre') { c.phase = 'h1'; c.h1Start = now; }
+    else if (c.phase === 'h1') { c.phase = 'ht'; c.h1End = now; }
+    else if (c.phase === 'ht') { c.phase = 'h2'; c.h2Start = now; }
+    else if (c.phase === 'h2') { c.phase = 'ft'; c.h2End = now; }
+    m.clock = c;
+  }
+  // minute within the current half; past the half length it becomes added time, e.g. {min:25, add:2} = 25+2
+  function minuteNow(m){
+    const c = m.clock; if (!c) return null; const now = Date.now();
+    const start = c.phase === 'h1' ? c.h1Start : c.phase === 'h2' ? c.h2Start : null;
+    if (!start) return null;
+    const h = c.phase === 'h1' ? 1 : 2, L = halfLen(m), base = h === 2 ? L : 0;
+    const played = Math.floor((now - start) / 60000) + 1;
+    return played > L ? { half: h, min: base + L, add: played - L } : { half: h, min: base + played };
+  }
+  function clockSecs(m){
+    const c = m.clock; if (!c) return 0; const now = Date.now();
+    if (c.phase === 'h1') return Math.floor((now - c.h1Start) / 1000);
+    if (c.phase === 'ht') return Math.floor(((c.h1End || now) - c.h1Start) / 1000);
+    if (c.phase === 'h2') return Math.floor((now - c.h2Start) / 1000);
+    if (c.phase === 'ft') return Math.floor(((c.h2End || now) - c.h2Start) / 1000);
+    return 0;
+  }
+  const mmss = (t) => String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0');
+  function drawClock(){
+    const m = current(); if (!m || !built) return;
+    const ph = (m.clock && m.clock.phase) || 'pre', t = clockSecs(m), L = halfLen(m) * 60;
+    const base = (ph === 'h2' || ph === 'ft') ? L : 0;
+    if (t > L) { built.ctime.textContent = mmss(base + L); built.cadd.textContent = '+' + mmss(t - L); built.cadd.hidden = false; }
+    else { built.ctime.textContent = mmss(base + t); built.cadd.hidden = true; }
+    built.cphase.textContent = PHASE[ph][0];
+    built.cbtn.textContent = PHASE[ph][1]; built.cbtn.hidden = !PHASE[ph][1];
+    built.creset.hidden = ph === 'pre';
+  }
+  setInterval(drawClock, 1000);
+
+  function update(){
+    const m = current(); if (!m || !built) return;
+    drawClock();
+    built.info.textContent = fmtDate(m.date) + ', ' + String(m.venue || '').toLowerCase();
+    built.rt.textContent = m.opp || 'Opposition';
+    const t = tallyFor(m.id);
+    built.nums.textContent = Object.values(t).reduce((n, p) => n + p.g, 0) + '–' + (m.against || 0);
+    PLAYERS.forEach(([name]) => {
+      const p = t[name] || blank();
+      STATS.forEach(([k, label]) => {
+        const o = built.buttons[name][k];
+        o.val.textContent = String(p[k]);
+        o.btn.classList.toggle('has', p[k] > 0);
+        o.btn.setAttribute('aria-label', 'Add ' + label.toLowerCase().replace(/s$/, '') + ' for ' + name + ', currently ' + p[k]);
+      });
+    });
+    const nb = ballotsFor(m.id).length;
+    built.selects.voteBtn.textContent = nb ? 'Parents\u2019 vote \u00b7 ' + nb + (nb === 1 ? ' vote' : ' votes') + ' so far' : 'Run the parents\u2019 vote';
+    const miss = new Set(m.missing || []);
+    built.acount.textContent = 'Attendance \u00b7 ' + (PLAYERS.length - miss.size) + ' of ' + PLAYERS.length + ' here';
+    PLAYERS.forEach(([name]) => {
+      const out = miss.has(name), a = built.achips[name];
+      a.btn.classList.toggle('out', out); a.st.textContent = '';
+      a.btn.setAttribute('aria-pressed', String(out)); a.btn.setAttribute('aria-label', name + (out ? ', marked missing. Tap if playing.' : ', playing. Tap to mark missing.'));
+      built.buttons[name].row.classList.toggle('away', out); built.buttons[name].w.btn.classList.toggle('away', out);
+    });
+    AWARDS.forEach(([k]) => { const sel = built.selects[k]; if (document.activeElement !== sel) sel.value = m[k] || ''; sel.classList.toggle('set', !!m[k]); });
+    $('undoBtn').disabled = !undo.some((u) => u.match === m.id);
+  }
+
+  function tap(name, k){
+    const m = current(); if (!m) return;
+    const id = uid();
+    const ev = { match: m.id, player: name, stat: k, at: Date.now() };
+    const mn = minuteNow(m); if (mn) { ev.half = mn.half; ev.min = mn.min; if (mn.add) ev.add = mn.add; }
+    events[id] = ev; undo.push({ id, match: m.id });
+    update();
+    const o = built && built.buttons[name] && built.buttons[name][k];
+    if (o) { o.btn.classList.add('flash'); clearTimeout(o.ft); o.ft = setTimeout(() => o.btn.classList.remove('flash'), 180); }
+    if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) {} }
+    putEvent(id, ev);
+  }
+
+  /* ---------- parents' vote ---------- */
+  const ballotsFor = (matchId) => Object.entries(ballots).filter(([, b]) => b.match === matchId);
+  const vs = $('voteSheet');
+  let vstate = 'ready', vlast = null, vpick = null, vtimer = null;
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  function tallyVotes(matchId){
+    const t = {}; ballotsFor(matchId).forEach(([, b]) => { t[b.player] = (t[b.player] || 0) + 1; });
+    return Object.entries(t).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  }
+  function openVote(){ vstate = 'ready'; vlast = null; closeAll(); vs.hidden = false; renderVote(); }
+  function closeVote(){ clearTimeout(vtimer); vs.hidden = true; render(); }
+  function castVote(name){
+    const m = current(); if (!m) return;
+    const id = uid(); const b = { match: m.id, player: name, at: Date.now(), src: 'phone' };
+    ballots[id] = b; vlast = id; putBallot(id, b);
+    if (navigator.vibrate) { try { navigator.vibrate(20); } catch (e) {} }
+    vstate = 'thanks'; renderVote();
+    clearTimeout(vtimer); vtimer = setTimeout(() => { if (vstate === 'thanks') { vstate = 'ready'; renderVote(); } }, 4000);
+  }
+  function addPoll(name, d){
+    const m = current(); if (!m) return;
+    if (d > 0) { const id = uid(); const b = { match: m.id, player: name, at: Date.now(), src: 'poll' }; ballots[id] = b; putBallot(id, b); }
+    else { const hit = ballotsFor(m.id).filter(([, b]) => b.player === name && b.src === 'poll').pop(); if (!hit) return; delete ballots[hit[0]]; dropBallot(hit[0]); }
+    renderVote();
+  }
+  function renderVote(){
+    const m = current(); if (!m || vs.hidden) return;
+    const n = ballotsFor(m.id).length;
+    const top = el('div', 'vote-top');
+    const info = el('span'); info.append(el('span', 'vcount', n + (n === 1 ? ' vote' : ' votes')), document.createTextNode(' cast \u00b7 v ' + (m.opp || 'Opposition')));
+    const backBtn = el('button', null, vstate === 'ready' ? 'Back to tracker' : 'Back'); backBtn.type = 'button';
+    backBtn.onclick = () => { if (vstate === 'ready') closeVote(); else { clearTimeout(vtimer); vstate = 'ready'; renderVote(); } };
+    top.append(info, backBtn);
+    const body = [];
+    if (vstate === 'ready') {
+      const box = el('div', 'vbig');
+      box.append(el('p', 'huge', 'Parents\u2019 player'), el('p', null, 'Who was your player of the match? One vote each, and it\u2019s secret.'));
+      const go = el('button', 'vbtn', 'Tap to vote'); go.type = 'button'; go.onclick = () => { vstate = 'pick'; renderVote(); };
+      const poll = el('button', 'vbtn ghost', 'Collect votes walking round'); poll.type = 'button'; poll.onclick = () => { vstate = 'poll'; renderVote(); };
+      const reveal = el('button', 'vbtn ghost', 'Close vote and see results'); reveal.type = 'button'; reveal.onclick = () => { vstate = 'results'; renderVote(); };
+      box.append(go, poll, reveal);
+      if (vlast && ballots[vlast]) {
+        const undoB = el('button', 'vbtn ghost', 'Remove the last vote'); undoB.type = 'button';
+        undoB.onclick = () => { if (vlast && ballots[vlast]) { delete ballots[vlast]; dropBallot(vlast); vlast = null; } renderVote(); };
+        box.append(undoB);
+      }
+      body.push(box);
+    } else if (vstate === 'pick') {
+      body.push(el('h2', null, 'Tap your player'), el('p', 'lead', 'Choose one Puma.'));
+      const g = el('div', 'vgrid');
+      PLAYERS.forEach(([name, no]) => {
+        const b = el('button'); b.type = 'button';
+        b.append(el('span', 'no', no), el('span', 'name', name));
+        b.onclick = () => castVote(name);
+        g.append(b);
+      });
+      body.push(g);
+    } else if (vstate === 'confirm') {
+      const box = el('div', 'vbig');
+      box.append(el('p', null, 'Your vote'), el('p', 'huge', vpick));
+      const yes = el('button', 'vbtn', 'Confirm vote'); yes.type = 'button'; yes.onclick = () => castVote(vpick);
+      const no = el('button', 'vbtn ghost', 'Change'); no.type = 'button'; no.onclick = () => { vstate = 'pick'; renderVote(); };
+      box.append(yes, no); body.push(box);
+    } else if (vstate === 'thanks') {
+      const box = el('div', 'vbig');
+      box.append(el('p', 'huge', 'Thanks!'), el('p', null, 'Vote saved. Pass the phone to the next parent.'));
+      const nx = el('button', 'vbtn', 'Next parent'); nx.type = 'button'; nx.onclick = () => { clearTimeout(vtimer); vstate = 'ready'; renderVote(); };
+      box.append(nx); body.push(box);
+    } else if (vstate === 'poll') {
+      body.push(el('h2', null, 'Collect votes'), el('p', 'lead', 'Walk round the parents and tap + for each vote you\u2019re given. Use \u2212 to fix a mistake.'));
+      const per = {}; ballotsFor(m.id).forEach(([, b]) => { if (b.src === 'poll') per[b.player] = (per[b.player] || 0) + 1; });
+      PLAYERS.forEach(([name]) => {
+        const r = el('div', 'vpoll');
+        const minus = el('button', null, '\u2212'); minus.type = 'button'; minus.setAttribute('aria-label', 'Remove a poll vote for ' + name); minus.onclick = () => addPoll(name, -1);
+        const plus = el('button', null, '+'); plus.type = 'button'; plus.setAttribute('aria-label', 'Add a poll vote for ' + name); plus.onclick = () => addPoll(name, 1);
+        const nm = el('span', 'name', name);
+        r.append(nm, minus, el('span', 'n', String(per[name] || 0)), plus);
+        body.push(r);
+      });
+    } else if (vstate === 'results') {
+      const t = tallyVotes(m.id);
+      body.push(el('h2', null, 'Parents\u2019 vote'));
+      if (!t.length) { body.push(el('p', 'lead', 'No votes yet.')); }
+      else {
+        const best = t[0][1], tied = t.filter(([, c]) => c === best).map(([nm]) => nm);
+        body.push(el('p', 'lead', tied.length > 1 ? 'It\u2019s a tie: pick the winner.' : tied[0] + ' wins with ' + best + (best === 1 ? ' vote.' : ' votes.')));
+        const ul = el('ul', 'vres');
+        t.forEach(([nm, c]) => { const li = el('li', c === best ? 'win' : null); li.append(el('span', null, nm), el('span', null, String(c))); ul.append(li); });
+        body.push(ul);
+        tied.forEach((nm) => {
+          const b = el('button', 'vbtn', (m.par === nm ? '\u2713 ' : '') + 'Make ' + nm + ' Parents\u2019 player'); b.type = 'button';
+          b.onclick = () => { m.par = nm; saveMatch(m); closeVote(); };
+          body.push(b);
+        });
+      }
+      const back = el('button', 'vbtn ghost', 'Back to voting'); back.type = 'button'; back.onclick = () => { vstate = 'ready'; renderVote(); }; body.push(back);
+    }
+    vs.replaceChildren(top, ...body);
+  }
+
+  $('undoBtn').onclick = () => {
+    for (let i = undo.length - 1; i >= 0; i--) {
+      if (undo[i].match === currentId) {
+        const u = undo.splice(i, 1)[0];
+        delete events[u.id]; update(); dropEvent(u.id); return;
+      }
+    }
+  };
+
+  /* ---------- sheets ---------- */
+  let venue = 'Home';
+  function openNew(){
+    $('oppIn').value = ''; $('dateIn').value = today(); venue = 'Home';
+    [...$('venueSeg').children].forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === venue)));
+    closeAll(); $('newSheet').hidden = false; $('oppIn').focus();
+  }
+  $('venueSeg').onclick = (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    venue = b.dataset.v;
+    [...$('venueSeg').children].forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  };
+  $('newCancel').onclick = () => { closeAll(); render(); };
+  $('newSave').onclick = () => {
+    const opp = $('oppIn').value.trim();
+    if (!opp) { $('oppIn').focus(); $('oppIn').placeholder = 'Enter the opponent to start'; return; }
+    const hl = Math.round(Number($('halfIn').value)); 
+    const m = { id: uid(), opp, date: $('dateIn').value || today(), venue, against: 0, halfLen: hl >= 5 && hl <= 45 ? hl : 25, createdAt: Date.now() };
+    matches.push(m); currentId = m.id;
+    closeAll(); render(); saveMatch(m);
+  };
+
+  const sortDesc = (arr) => [...arr].sort((a, b) => String(b.date) + String(b.createdAt).padStart(15,'0') > String(a.date) + String(a.createdAt).padStart(15,'0') ? 1 : -1);
+  function openMatches(){
+    const ul = $('matchList'); ul.replaceChildren();
+    const sorted = sortDesc(matches);
+    const outcome = (m) => { if (m.clock && m.clock.phase && m.clock.phase !== 'ft') return 'live'; const a = pumasGoals(m.id), b = m.against || 0; return a > b ? 'W' : a === b ? 'D' : 'L'; };
+    const done = sorted.filter((m) => outcome(m) !== 'live');
+    const fb = $('formBox'); fb.replaceChildren(); fb.hidden = !done.length;
+    if (done.length) {
+      const last5 = done.slice(0, 5).reverse();
+      const fl = document.createElement('p'); fl.className = 'fl'; fl.textContent = 'Form guide \u00b7 last ' + last5.length + ', newest on the right';
+      const chips = document.createElement('div'); chips.className = 'chips';
+      last5.forEach((m) => { const c = document.createElement('span'); const r = outcome(m); c.className = 'wdl ' + r; c.textContent = r; c.title = (r === 'W' ? 'Won' : r === 'D' ? 'Drew' : 'Lost') + ' v ' + (m.opp || 'Opposition'); c.setAttribute('aria-label', c.title); chips.append(c); });
+      const n = (r) => done.filter((m) => outcome(m) === r).length;
+      const gf = done.reduce((t, m) => t + pumasGoals(m.id), 0), ga = done.reduce((t, m) => t + (m.against || 0), 0);
+      const rec = document.createElement('p'); rec.className = 'rec';
+      rec.textContent = 'P' + done.length + '  W' + n('W') + '  D' + n('D') + '  L' + n('L') + '  \u00b7  Goals ' + gf + '\u2013' + ga;
+      fb.append(fl, chips, rec);
+    }
+    if (!sorted.length) { const li = document.createElement('li'); li.className = 'meta'; li.style.padding = '12px 2px'; li.textContent = 'No matches yet.'; ul.append(li); }
+    sorted.forEach((m) => {
+      const li = document.createElement('li'); const b = document.createElement('button');
+      const left = document.createElement('span');
+      const o = document.createElement('div'); o.textContent = 'v ' + (m.opp || 'Opposition'); o.style.fontWeight = '600';
+      const meta = document.createElement('div'); meta.className = 'meta'; meta.textContent = fmtDate(m.date) + ', ' + String(m.venue || '').toLowerCase();
+      left.append(o, meta);
+      const rw = document.createElement('span'); rw.className = 'resw';
+      const res = document.createElement('span'); res.className = 'res'; res.textContent = pumasGoals(m.id) + '–' + (m.against || 0);
+      const r = outcome(m); const badge = document.createElement('span'); badge.className = 'wdl ' + r; badge.textContent = r === 'live' ? 'Live' : r;
+      badge.setAttribute('aria-label', r === 'W' ? 'Won' : r === 'D' ? 'Drew' : r === 'L' ? 'Lost' : 'In progress');
+      rw.append(res, badge);
+      b.append(left, rw);
+      b.onclick = () => { currentId = m.id; closeAll(); render(); };
+      li.append(b); ul.append(li);
+    });
+    closeAll(); $('matchesSheet').hidden = false;
+  }
+  $('matchesBtn').onclick = openMatches;
+  $('mClose').onclick = () => { closeAll(); render(); };
+  $('mNew').onclick = openNew;
+
+  function totals(){
+    const tot = {}; PLAYERS.forEach(([n]) => tot[n] = Object.assign(blank(), { mgr:0, par:0, apps: matches.filter((m) => !(m.missing || []).includes(n)).length }));
+    matches.forEach((m) => AWARDS.forEach(([k]) => { if (m[k] && tot[m[k]]) tot[m[k]][k] += 1; }));
+    Object.values(events).forEach((ev) => {
+      if (!matches.some((m) => m.id === ev.match)) return;
+      const o = tot[ev.player] || (tot[ev.player] = Object.assign(blank(), { mgr:0, par:0 }));
+      if (ev.stat in o) o[ev.stat] += 1;
+    });
+    return tot;
+  }
+  function openTotals(){
+    const tot = totals();
+    const tb = $('totTable'); tb.replaceChildren();
+    const head = document.createElement('tr');
+    ['Player','Apps','Gls','Ast','Wins','Svs','Mgr','Par'].forEach((h) => { const th = document.createElement('th'); th.textContent = h; head.append(th); });
+    tb.append(head);
+    [...PLAYERS].sort((a, b) => a[0].localeCompare(b[0])).forEach(([n]) => {
+      const tr = document.createElement('tr');
+      const td0 = document.createElement('td'); td0.textContent = n; tr.append(td0);
+      [['apps']].concat(STATS, AWARDS).forEach(([k]) => { const td = document.createElement('td'); td.textContent = tot[n][k]; tr.append(td); });
+      tb.append(tr);
+    });
+    $('tNote').textContent = matches.length + (matches.length === 1 ? ' match' : ' matches') + ' recorded' + (mode === 'local' ? ', saved on this phone only.' : '.');
+    $('tStatus').textContent = '';
+    closeAll(); $('totalsSheet').hidden = false;
+  }
+  $('totalsBtn').onclick = () => openDash();
+
+  /* ---------- live dashboard ---------- */
+  let viewOnly = false, dSort = { k: 'g', dir: -1 };
+  const isLive = (m) => !!(m.clock && m.clock.phase && m.clock.phase !== 'pre' && m.clock.phase !== 'ft');
+  const resOf = (m) => { const a = pumasGoals(m.id), b = m.against || 0; return a > b ? 'W' : a === b ? 'D' : 'L'; };
+  const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const minTxt = (e) => e && e.min != null ? ' ' + e.min + (e.add ? '+' + e.add : '') + '\u2019' : '';
+  function openDash(){ closeAll(); $('dashSheet').hidden = false; renderDash(); }
+  function renderDash(){
+    const ds = $('dashSheet'); if (ds.hidden) return;
+    ds.classList.toggle('viewer', viewOnly);
+    const asc = [...matches].sort((a, b) => (String(a.date) + String(a.createdAt).padStart(15, '0')) > (String(b.date) + String(b.createdAt).padStart(15, '0')) ? 1 : -1);
+    const done = asc.filter((m) => !isLive(m));
+    const n = (r) => done.filter((m) => resOf(m) === r).length;
+    const gf = done.reduce((t, m) => t + pumasGoals(m.id), 0), ga = done.reduce((t, m) => t + (m.against || 0), 0);
+    const head = mk('header', 'dhead'); const top = mk('div', 'top'); const tl = mk('div');
+    tl.append(mk('p', 'club', 'Rayleigh FC \u00b7 Pumas'), mk('h1', null, '2026-27 season'));
+    top.append(tl);
+    if (!viewOnly) { const x = mk('button', null, 'Close'); x.type = 'button'; x.onclick = () => { closeAll(); render(); }; top.append(x); }
+    const rec = mk('div', 'drec');
+    [[done.length, 'Played'], [n('W'), 'Won'], [n('D'), 'Drawn'], [n('L'), 'Lost'], [gf, 'Scored'], [ga, 'Conceded'], [(gf - ga > 0 ? '+' : '') + (gf - ga), 'Goal diff'], [done.filter((m) => !(m.against || 0)).length, 'Clean sheets']].forEach(([v, l]) => { const d = mk('div'); d.append(mk('b', null, String(v)), mk('span', null, l)); rec.append(d); });
+    head.append(top, rec);
+    const w = mk('div', 'dwrap');
+    // latest or live match
+    const last = asc[asc.length - 1];
+    if (last) {
+      const sec = mk('section', 'dsec'); sec.append(mk('h2', null, isLive(last) ? 'Live now' : 'Latest result'));
+      const card = mk('div', 'latest'); const meta = mk('div', 'meta');
+      const ml = mk('span', null, fmtDate(last.date) + ', ' + String(last.venue || '').toLowerCase());
+      meta.append(ml);
+      if (isLive(last)) { const lt = mk('span', 'livetag', '\u25cf LIVE'); meta.append(lt); } else meta.append(mk('span', null, { W: 'Won', D: 'Drew', L: 'Lost' }[resOf(last)]));
+      const sc = mk('div', 'sc'); const home = last.venue !== 'Away';
+      const us = mk('div', 'tm', 'Pumas'), them = mk('div', 'tm r', last.opp || 'Opposition');
+      const big = mk('div', 'big', (home ? pumasGoals(last.id) + '\u2013' + (last.against || 0) : (last.against || 0) + '\u2013' + pumasGoals(last.id)));
+      if (home) sc.append(us, big, them); else { us.className = 'tm r'; them.className = 'tm'; sc.append(them, big, us); }
+      card.append(meta, sc);
+      const gl = Object.values(events).filter((e) => e.match === last.id && e.stat === 'g').sort((a, b) => a.at - b.at).map((e) => e.player + minTxt(e));
+      if (gl.length) card.append(mk('p', 'gl', '\u26bd ' + gl.join(' \u00b7 ')));
+      const aw = [last.mgr && 'Manager\u2019s player: ' + last.mgr, last.par && 'Parents\u2019 player: ' + last.par].filter(Boolean);
+      if (aw.length) card.append(mk('p', 'aw', aw.join(' \u00b7 ')));
+      sec.append(card); w.append(sec);
+    }
+    // form
+    if (done.length) {
+      const sec = mk('section', 'dsec'); sec.append(mk('h2', null, 'Form guide'));
+      const f = mk('div', 'dform'); done.slice(-6).forEach((m) => { const r = resOf(m); const c = mk('span', 'wdl ' + r, r); c.title = r + ' v ' + (m.opp || ''); c.setAttribute('aria-label', ({ W: 'Won', D: 'Drew', L: 'Lost' })[r] + ' v ' + (m.opp || '')); f.append(c); });
+      sec.append(f, mk('p', 'dnote', 'Last ' + Math.min(6, done.length) + ', newest on the right')); w.append(sec);
+    }
+    // leaders
+    const tot = totals();
+    const lead = (k) => { const max = Math.max(0, ...PLAYERS.map(([p]) => tot[p][k])); return max ? [PLAYERS.filter(([p]) => tot[p][k] === max).map(([p]) => p), max] : null; };
+    const L = [['Top scorer', lead('g')], ['Assists', lead('a')], ['Ball wins', lead('w')], ['Saves', lead('s')]].filter(([, v]) => v);
+    if (L.length) {
+      const sec = mk('section', 'dsec'); sec.append(mk('h2', null, 'Season leaders'));
+      const g = mk('div', 'lead'); L.forEach(([l, [names, v]]) => { const d = mk('div'); d.append(mk('p', 'l', l), mk('p', 'n', names.join(', ')), mk('p', 'v', String(v))); g.append(d); });
+      sec.append(g); w.append(sec);
+    }
+    // player table
+    const sec = mk('section', 'dsec'); sec.append(mk('h2', null, 'Player stats'));
+    const tw = mk('div', 'tablewrap'); const tb = mk('table'); tb.id = 'dTable';
+    const COLS = [['name', 'Player'], ['apps', 'Apps'], ['g', 'Gls'], ['a', 'Ast'], ['w', 'Wins'], ['s', 'Svs'], ['mgr', 'Mgr'], ['par', 'Par']];
+    const hr = mk('tr');
+    COLS.forEach(([k, l]) => { const th = mk('th', null, l); th.scope = 'col'; if (dSort.k === k) th.setAttribute('aria-sort', dSort.dir < 0 ? 'descending' : 'ascending'); th.onclick = () => { dSort = { k, dir: dSort.k === k ? -dSort.dir : (k === 'name' ? 1 : -1) }; renderDash(); }; hr.append(th); });
+    const thead = mk('thead'); thead.append(hr); tb.append(thead);
+    const rows = PLAYERS.map(([p]) => Object.assign({ name: p }, tot[p]));
+    rows.sort((x, y) => dSort.k === 'name' ? dSort.dir * x.name.localeCompare(y.name) : dSort.dir * (x[dSort.k] - y[dSort.k]) || x.name.localeCompare(y.name));
+    const maxOf = {}; COLS.slice(1).forEach(([k]) => { maxOf[k] = Math.max(0, ...rows.map((r) => r[k])); });
+    const body = mk('tbody');
+    rows.forEach((r) => { const tr = mk('tr'); COLS.forEach(([k]) => { const td = mk('td', k !== 'name' && k !== 'apps' && r[k] && r[k] === maxOf[k] ? 'top' : null, String(r[k])); tr.append(td); }); body.append(tr); });
+    tb.append(body); tw.append(tb); sec.append(tw);
+    sec.append(mk('p', 'dnote', 'Tap a column to sort. Orange marks the leader. Assists, ball wins and saves count from when they were first tracked.'));
+    w.append(sec);
+    // results
+    if (done.length) {
+      const rs = mk('section', 'dsec'); rs.append(mk('h2', null, 'Results'));
+      const ul = mk('ul', 'dres');
+      [...done].reverse().forEach((m) => { const li = mk('li'); const lft = mk('div'); lft.append(mk('div', 'o', 'v ' + (m.opp || 'Opposition')), mk('div', 'm', fmtDate(m.date) + ', ' + String(m.venue || '').toLowerCase())); const r = mk('div', 'r'); r.append(mk('span', null, pumasGoals(m.id) + '\u2013' + (m.against || 0)), mk('span', 'wdl ' + resOf(m), resOf(m))); li.append(lft, r); ul.append(li); });
+      rs.append(ul); w.append(rs);
+    }
+    if (!viewOnly) { const ft = mk('div', 'dfoot'); const csv = mk('button', null, 'Download CSV'); csv.type = 'button'; csv.onclick = () => $('tExport').click(); ft.append(csv); w.append(ft); }
+    ds.replaceChildren(head, w);
+  }
+  $('tClose').onclick = () => { closeAll(); render(); };
+  $('tExport').onclick = async () => {
+    const lines = [['date','opponent','venue','pumas','against','player','played','goals','assists','ball_wins','saves','managers_player','parents_player','goal_minutes'].join(',')];
+    [...matches].sort((a,b) => a.date > b.date ? 1 : -1).forEach((m) => {
+      const t = tallyFor(m.id);
+      PLAYERS.forEach(([n]) => {
+        const p = t[n] || blank();
+        lines.push([m.date, '"' + String(m.opp || '').replace(/"/g,'""') + '"', m.venue, pumasGoals(m.id), m.against || 0, n, (m.missing || []).includes(n) ? 0 : 1, p.g, p.a, p.w, p.s, m.mgr === n ? 1 : 0, m.par === n ? 1 : 0, '"' + Object.values(events).filter((e) => e.match === m.id && e.player === n && e.stat === 'g' && e.min != null).sort((x, y) => ((x.half || 0) - (y.half || 0)) || (x.min - y.min) || ((x.add || 0) - (y.add || 0))).map((e) => e.min + (e.add ? '+' + e.add : '')).join(' ') + '"'].join(','));
+      });
+    });
+    try {
+      const dl = window.claude ? await window.claude.use('downloads') : null;
+      if (!dl) { $('tStatus').textContent = 'Downloads are not available here. Ask Claude to read the stats instead.'; return; }
+      await dl.save({ filename: 'pumas-match-stats.csv', data: lines.join('\n') });
+      $('tStatus').textContent = 'Saved pumas-match-stats.csv.';
+    } catch (e) { $('tStatus').textContent = e && e.code === 'declined' ? 'Download cancelled.' : 'The download did not go through. Try again.'; }
+  };
+  function closeAll(){ ['newSheet','matchesSheet','totalsSheet','voteSheet','dashSheet'].forEach((id) => $(id).hidden = true); if (typeof sendSheet !== 'undefined') sendSheet.hidden = true; }
+  /* ---------- send to Dan ---------- */
+  const sendSheet = document.createElement('section'); sendSheet.className = 'sheet'; sendSheet.hidden = true; document.body.append(sendSheet);
+  function payload(m){
+    const P = PLAYERS.map(([n]) => n);
+    const ev = Object.values(events).filter((e) => e.match === m.id).sort((a, b) => a.at - b.at)
+      .map((e) => [P.indexOf(e.player), e.stat, e.half || 0, e.min == null ? -1 : e.min, e.add || 0]);
+    const votes = {}; Object.values(ballots).forEach((b) => { if (b.match === m.id) votes[b.player] = (votes[b.player] || 0) + 1; });
+    const keep = {}; ['opp','date','venue','halfLen','against','againstMins','mgr','par','missing','clock','createdAt'].forEach((k) => { if (m[k] != null) keep[k] = m[k]; });
+    return { v: 1, id: m.id, m: keep, e: ev, votes };
+  }
+  function summary(m){
+    const t = tallyFor(m.id), us = pumasGoals(m.id), them = m.against || 0;
+    const home = m.venue !== 'Away';
+    const lines = ['⚽ Pumas match stats – ' + (m.opp || 'Opposition') + ' (' + fmtDate(m.date) + ', ' + (m.venue || 'Home') + ')',
+      home ? 'Pumas ' + us + '–' + them + ' ' + (m.opp || 'Opposition') : (m.opp || 'Opposition') + ' ' + them + '–' + us + ' Pumas'];
+    const gl = Object.values(events).filter((e) => e.match === m.id && e.stat === 'g').sort((a, b) => a.at - b.at).map((e) => e.player + (e.min != null ? ' ' + e.min + (e.add ? '+' + e.add : '') + '’' : ''));
+    if (gl.length) lines.push('Goals: ' + gl.join(', '));
+    if (m.mgr) lines.push('Manager’s player: ' + m.mgr);
+    if (m.par) lines.push('Parents’ player: ' + m.par);
+    if ((m.missing || []).length) lines.push('Missing: ' + m.missing.join(', '));
+    lines.push('', 'Data for Claude (please leave as is):', 'PUMAS-DATA ' + JSON.stringify(payload(m)));
+    return lines.join('\n');
+  }
+  function openSend(){
+    const m = current(); if (!m) return;
+    closeAll(); sendSheet.replaceChildren(); sendSheet.hidden = false;
+    const h = el('h2', null, 'Send to Dan');
+    const missingBits = [];
+    if (!m.mgr) missingBits.push('Manager’s player'); if (!m.par) missingBits.push('Parents’ player');
+    if (!(m.clock && m.clock.phase === 'ft')) missingBits.push('full time on the clock');
+    const note = el('p', 'note', missingBits.length ? 'Not done yet: ' + missingBits.join(', ') + '. You can still send now and send again later.' : 'All done. Send this to Dan on WhatsApp, as it is.');
+    const txt = summary(m);
+    const pre = el('pre'); pre.textContent = txt.split('\n').slice(0, -3).join('\n').trim(); pre.style.cssText = 'white-space:pre-wrap;font:inherit;background:var(--chip);border-radius:12px;padding:12px;margin:0 0 14px';
+    const btns = el('div', 'row-btns');
+    const wa = el('button', 'primary', 'Send on WhatsApp'); wa.type = 'button';
+    wa.onclick = () => { location.href = 'https://wa.me/?text=' + encodeURIComponent(txt); };
+    const sh = el('button', null, 'Share…'); sh.type = 'button';
+    sh.onclick = async () => { try { if (navigator.share) await navigator.share({ text: txt }); else { await navigator.clipboard.writeText(txt); st.textContent = 'Copied. Paste it into a message to Dan.'; } } catch (e) {} };
+    const cp = el('button', null, 'Copy'); cp.type = 'button';
+    cp.onclick = async () => { try { await navigator.clipboard.writeText(txt); st.textContent = 'Copied. Paste it into a message to Dan.'; } catch (e) { st.textContent = 'Could not copy on this phone. Use Send on WhatsApp.'; } };
+    btns.append(wa, sh);
+    const btns2 = el('div', 'row-btns'); const back = el('button', null, 'Back to match'); back.type = 'button'; back.onclick = () => { sendSheet.hidden = true; render(); }; btns2.append(back, cp);
+    const st = el('p', 'status');
+    sendSheet.append(h, note, pre, btns, btns2, st);
+  }
+  document.getElementById('sendBtn').onclick = openSend;
+
+
+  /* ---------- start ---------- */
+  function pickCurrent(){
+    if (currentId && matches.some((m) => m.id === currentId)) return;
+    const s = sortDesc(matches);
+    currentId = s.length ? s[0].id : null;
+  }
+  const local = lsGet();
+  if (local) { matches = local.matches || []; events = local.events || {}; ballots = local.ballots || {}; }
+  pickCurrent(); render();
+
+  (async () => {
+    db = null;
+    if (!db) return;
+    mode = 'db';
+    try { const u = window.claude ? await window.claude.use('user') : null; viewOnly = u ? !(await u.canEdit()) : false; } catch (e) { viewOnly = false; }
+    if (viewOnly) { $('bar').hidden = true; app.replaceChildren(); openDash(); }
+    let gotMatches = false;
+    db.collection('matches').onSnapshot((snap) => {
+      const remote = snap.docs.map((d) => Object.assign(plain(d.data()), { id: d.id }));
+      const byId = {}; remote.forEach((m) => byId[m.id] = m);
+      matches.forEach((m) => { if (!byId[m.id] && !gotMatches && Date.now() - (m.createdAt || 0) < 10 * 60000) byId[m.id] = m; });
+      matches = Object.values(byId);
+      gotMatches = true;
+      pickCurrent();
+      if (!$('dashSheet').hidden) renderDash(); else if (!sheetOpen()) render();
+    }, (e) => showError('Could not load matches (' + (e && e.code || 'error') + ').'));
+    if (!viewOnly) db.collection('ballots').onSnapshot((snap) => {
+      const next = {};
+      snap.docs.forEach((d) => { next[d.id] = plain(d.data()); });
+      binflight.forEach((id) => { if (!(id in next) && ballots[id]) next[id] = ballots[id]; });
+      bdeleting.forEach((id) => { delete next[id]; });
+      ballots = next;
+      if (!$('voteSheet').hidden) { if (vstate !== 'pick' && vstate !== 'confirm') renderVote(); } else if (!sheetOpen()) update();
+    }, (e) => showError('Could not load votes (' + (e && e.code || 'error') + ').'));
+    db.collection('events').onSnapshot((snap) => {
+      const next = {};
+      snap.docs.forEach((d) => { next[d.id] = plain(d.data()); });
+      inflight.forEach((id) => { if (!(id in next) && events[id]) next[id] = events[id]; });
+      deleting.forEach((id) => { delete next[id]; });
+      events = next;
+      if (!$('dashSheet').hidden) renderDash(); else if (!sheetOpen()) update();
+    }, (e) => showError('Could not load stats (' + (e && e.code || 'error') + ').'));
+  })();
+})();
+</script>
+</body>
+</html>
