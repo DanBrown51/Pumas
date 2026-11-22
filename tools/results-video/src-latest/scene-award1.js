@@ -1,0 +1,1 @@
+kit.scene('award1', window.CARD.make({ idx: 0, name: "Joshua", label: "Manager\u2019s & Parents\u2019 player" }));
