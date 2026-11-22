@@ -49,6 +49,8 @@ function timelineMarkup(){
   h += '<div class="score-gtph" style="position:absolute;left:' + (TX0 - 12) + 'px;top:' + (TY - 12) + 'px;width:24px;height:24px;border-radius:50%;background:var(--second);box-shadow:0 0 24px color-mix(in srgb, var(--second) 60%, transparent)"></div>';
   return h + '</div>';
 }
+// hat-trick: the moment a Pumas player scores his third
+const HAT = (() => { const n = {}; for (let i = 0; i < TL.length; i++) { const g = TL[i]; if (!g.us) continue; n[g.who] = (n[g.who] || 0) + 1; if (n[g.who] === 3) return { i, who: g.who }; } return null; })();
 kit.scene('score', {
   init(kit) {
     const us = 'Rayleigh Pumas', them = R.opp;
@@ -63,6 +65,7 @@ kit.scene('score', {
       lab('ul', HOME ? 110 : 600, 'var(--main)') + lab('tl', HOME ? 600 : 110, 'color-mix(in srgb, var(--second) 70%, var(--ground))') +
       (WON ? '<div class="score-glow" style="position:absolute;left:-100px;top:500px;width:1280px;height:1000px;border-radius:50%;background:radial-gradient(closest-side, color-mix(in srgb, var(--main) 55%, transparent), transparent);opacity:0"></div>' : '') +
       timelineMarkup() +
+      (HAT ? '<div class="score-hat" style="position:absolute;left:' + ((HOME ? 290 : 790) - 260) + 'px;top:672px;width:520px;display:flex;justify-content:center;opacity:0"><p class="chip" style="font-size:44px;padding:8px 30px;white-space:nowrap">' + HAT.who + ' hat-trick!</p></div>' : '') +
       '<div class="words center score-win" style="top:' + (TL2 ? 1470 : 1440) + 'px"><p class="chip"' + (WON ? ' style="font-size:72px;padding:12px 56px;box-shadow:0 0 60px color-mix(in srgb, var(--main) 70%, transparent)"' : '') + '>' + RESULT + '</p></div>' +
       (FORM.length ? '<div class="words center score-form" style="top:' + (TL2 ? 1605 : 1580) + 'px;gap:22px"><p class="eyebrow">2026-27 form guide</p>' +
         '<div style="display:flex;gap:16px;justify-content:center">' + FORM.map((r, i) => '<div class="score-ft" style="position:relative;width:104px;height:104px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-family:var(--display, var(--sans, system-ui, sans-serif));font-weight:800;font-size:78px;line-height:1;' +
@@ -78,6 +81,7 @@ kit.scene('score', {
     this.us = q('us'); this.them = q('them');
     this.ul = q('ul').style; this.ult = q('ult'); this.ulm = q('ulm'); this.tl = q('tl').style; this.tlt = q('tlt'); this.tlm = q('tlm');
     this.win = q('win').style;
+    this.hat = HAT ? q('hat').style : null;
     this.gtl = q('gtl').style; this.tlfill = q('gtlfill').style; this.tph = q('gtph').style;
     this.tms = [...kit.stage.querySelectorAll('.score-gtm')].map((e) => e.style);
     this.tle = TLL.map((l, i) => q('gtl' + i)); this.tls = this.tle.map((e) => e.style);
@@ -127,6 +131,11 @@ kit.scene('score', {
       this.tls[i].opacity = eo(seg(t, t0 + 0.05, t0 + 0.25));
       this.tls[i].transform = 'translateY(' + lerp(-12, 0, eo(seg(t, t0 + 0.05, t0 + 0.3))) + 'px)';
     });
+    if (this.hat) {
+      const h0 = GT[HAT.i] + 0.12, k = eob(seg(t, h0, h0 + 0.4), 2.2);
+      this.hat.opacity = eo(seg(t, h0, h0 + 0.1));
+      this.hat.transform = 'scale(' + lerp(2.2, 1, k) + ') rotate(' + lerp(-14, -4, k) + 'deg)';
+    }
     const w = eob(seg(t, WIN, WIN + 0.45), 1.8);
     this.win.opacity = eo(seg(t, WIN, WIN + 0.15));
     const pulse = WON && t > WIN + 0.45 ? 1 + 0.05 * Math.sin((t - WIN - 0.45) * 2 * Math.PI * 0.9) : 1;

@@ -21,6 +21,7 @@ kit.score(function (S, T) {
     S.fx('pop', sc + d + 0.02, { vel: 60, pitch: 1.1 + k * 0.05 });
     k++;
   });
+  S.fx('sparkle', sc + 2.636 + 0.12, { vel: 52 }); // Joshua hat-trick stamp
   const win = sc + 3.236;
   [-0.4, -0.32, -0.24, -0.18, -0.12, -0.07, -0.03].forEach((d, i) => S.drum('snare', { t: win + d, vel: 56 + i * 7 }));
   S.drum('crash', { t: win, vel: 100 });
